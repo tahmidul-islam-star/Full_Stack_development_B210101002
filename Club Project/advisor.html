@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Advisor Panel | CSTU Computer & Programming Club</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="advisor.css">
+</head>
+<body>
+<header class="header">
+  <div class="brand">
+    <div class="logo">💻</div>
+    <div class="brand-text">
+      <h1>CSTU Computer & Programming Club</h1>
+      <p>Code • Learn • Build • Lead</p>
+    </div>
+  </div>
+  <div id="authArea" class="auth-area">
+    <button id="logoutBtn" class="btn small ghost" style="display:none" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<nav class="nav">
+  <a href="login.html" class="nav-link">Login</a>
+  <a href="advisor.html" class="nav-link">Advisor Panel</a>
+  <a href="executive.html" class="nav-link">Executive</a>
+  <a href="notice.html" class="nav-link">Notice</a>
+  <a href="members.html" class="nav-link">Members</a>
+  <a href="contest.html" class="nav-link">Contest</a>
+</nav>
+
+<main class="container">
+  <section class="panel active">
+    <h2>Advisor Panel</h2>
+    <div class="grid cards">
+      <article class="card profile">
+        <h3>Prof. Dr. Payer Ahmed</h3>
+        <p class="muted">Chief Advisor, CSTU CPC</p>
+        <p>Vice-Chancellor</p>
+        <p class="muted">Chandpur Science and Technology University</p>
+        <button class="btn small">View Profile</button>
+      </article>
+
+      <article class="card profile">
+        <h3>Md. Jahidul Islam</h3>
+        <p class="muted">Advisor, CSTU CPC</p>
+        <p>Chairman</p>
+        <p class="muted">Department of Computer Science and Engineering</p>
+        <p class="muted">Chandpur Science and Technology University</p>
+        <button class="btn small">View Profile</button>
+      </article>
+
+      <article class="card profile">
+        <h3>Sohel Rana</h3>
+        <p class="muted">Advisor, CSTU CPC</p>
+        <p>Chairman</p>
+        <p class="muted">Department of Information and Communication Technology</p>
+        <p class="muted">Chandpur Science and Technology University</p>
+        <button class="btn small">View Profile</button>
+      </article>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <p>© 2026 CSTU Computer & Programming Club | Developed by Tahmidul Islam</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

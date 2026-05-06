@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Executive Members | CSTU Computer & Programming Club</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="executive.css">
+</head>
+<body>
+<header class="header">
+  <div class="brand">
+    <div class="logo">💻</div>
+    <div class="brand-text">
+      <h1>CSTU Computer & Programming Club</h1>
+      <p>Code • Learn • Build • Lead</p>
+    </div>
+  </div>
+  <div id="authArea" class="auth-area">
+    <button id="logoutBtn" class="btn small ghost" style="display:none" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<nav class="nav">
+  <a href="login.html" class="nav-link">Login</a>
+  <a href="advisor.html" class="nav-link">Advisor Panel</a>
+  <a href="executive.html" class="nav-link">Executive</a>
+  <a href="notice.html" class="nav-link">Notice</a>
+  <a href="members.html" class="nav-link">Members</a>
+  <a href="contest.html" class="nav-link">Contest</a>
+</nav>
+
+<main class="container">
+  <section class="panel active">
+    <h2>Executive Members</h2>
+    <p id="welcomeName" class="hint"></p>
+    <div class="grid cards">
+      <article class="card exec">
+        <img src="asset/IMG_20260412_191727.jpg.jpeg" alt="Md. Tahmidul Islam" class="avatar">
+        <div class="card-body">
+          <h3>Md. Tahmidul Islam</h3>
+          <p class="muted">President, CSTU CPC</p>
+          <p>Session: 2021-22</p>
+          <p class="muted">Department of Computer Science and Engineering</p>
+          <p class="muted">Chandpur Science and Technology University</p>
+        </div>
+      </article>
+
+      <article class="card exec">
+        <img src="asset/Tohidul Islam CSE 21 .jpg" alt="Tohidul Islam" class="avatar">
+        <div class="card-body">
+          <h3>Tohidul Islam</h3>
+          <p class="muted">Vice President, CSTU CPC</p>
+          <p>Session: 2021-22</p>
+          <p class="muted">Department of Computer Science and Engineering</p>
+          <p class="muted">Chandpur Science and Technology University</p>
+        </div>
+      </article>
+
+      <article class="card exec">
+        <img src="asset/Md. Mursalin Akungi ICT 21.jpg" alt="Md. Mursalin Akungi" class="avatar">
+        <div class="card-body">
+          <h3>Md. Mursalin Akungi</h3>
+          <p class="muted">General Secretary, CSTU CPC</p>
+          <p>Session: 2021-22</p>
+          <p class="muted">Department of Information and Communication Technology</p>
+          <p class="muted">Chandpur Science and Technology University</p>
+        </div>
+      </article>
+
+      <article class="card exec">
+        <img src="asset/H.M. Raihan Sakib CSE 22 (1).jpg" alt="H.M. Raihan Sakib" class="avatar">
+        <div class="card-body">
+          <h3>H.M. Raihan Sakib</h3>
+          <p class="muted">Event Co-ordinator, CSTU CPC</p>
+          <p>Session: 2022-23</p>
+          <p class="muted">Department of Computer Science and Engineering</p>
+          <p class="muted">Chandpur Science and Technology University</p>
+        </div>
+      </article>
+
+      <article class="card exec">
+        <img src="asset/Md Mehedi Hasan ICT 21.jpg" alt="Md Mehedi Hasan" class="avatar">
+        <div class="card-body">
+          <h3>Md Mehedi Hasan</h3>
+          <p class="muted">Organizing Secretary, CSTU CPC</p>
+          <p>Session: 2021-22</p>
+          <p class="muted">Department of Information and Communication Technology</p>
+          <p class="muted">Chandpur Science and Technology University</p>
+        </div>
+      </article>
+
+      <article class="card exec">
+        <img src="asset/Jahid Hassan CSE 22.jpg" alt="Jahid Hassan" class="avatar">
+        <div class="card-body">
+          <h3>Jahid Hassan</h3>
+          <p class="muted">Media & Publicity Secretary, CSTU CPC</p>
+          <p>Session: 2022-23</p>
+          <p class="muted">Department of Computer Science and Engineering</p>
+          <p class="muted">Chandpur Science and Technology University</p>
+        </div>
+      </article>
+
+      <article class="card exec">
+        <img src="asset/Atiq Faisal ICT 22.jpg" alt="Atiq Faysal" class="avatar">
+        <div class="card-body">
+          <h3>Atiq Faysal</h3>
+          <p class="muted">Media & Publicity Secretary, CSTU CPC</p>
+          <p>Session: 2022-23</p>
+          <p class="muted">Department of Information and Communication Technology</p>
+          <p class="muted">Chandpur Science and Technology University</p>
+        </div>
+      </article>
+
+      <article class="card exec">
+        <img src="asset/Miad ICT 21.jpg" alt="Miad" class="avatar">
+        <div class="card-body">
+          <h3>Miad</h3>
+          <p class="muted">Treasurer, CSTU CPC</p>
+          <p>Session: 2021-22</p>
+          <p class="muted">Department of Information and Communication Technology</p>
+          <p class="muted">Chandpur Science and Technology University</p>
+        </div>
+      </article>
+
+      <article class="card exec">
+        <img src="asset/Kaji Muzahidul Islam CSE 22 (1).jpg" alt="Kaji Muzahidul Islam" class="avatar">
+        <div class="card-body">
+          <h3>Kaji Muzahidul Islam</h3>
+          <p class="muted">Additional Treasurer, CSTU CPC</p>
+          <p>Session: 2022-23</p>
+          <p class="muted">Department of Computer Science and Engineering</p>
+          <p class="muted">Chandpur Science and Technology University</p>
+        </div>
+      </article>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <p>© 2026 CSTU Computer & Programming Club | Developed by Tahmidul Islam</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
