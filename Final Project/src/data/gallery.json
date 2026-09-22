@@ -1,0 +1,32 @@
+[
+    {
+        "title": "CSTU at SUST IUPC 2026",
+        "description": "Team Dhulikona proudly represented Chandpur Science and Technology University (CSTU) at SUST IUPC 2026.",
+        "img": "/img/img1.jpg"
+    },
+    {
+        "title": "Highlights from CSTU Beginner Programming Contest #1",
+        "description": "CSTU Computer & Programming Club successfully organized the CSTU Beginner Programming Contest #1. We sincerely thank everyone who participated, volunteered, and supported the event. We were delighted to have our respected advisor, Md. Jahidul Islam Sir, visit the contest and interact with the participants. Your enthusiasm and active participation made the event a great success. We look forward to organizing more exciting programming events in the future!",
+        "img": "/img/img2.jpg"
+    },
+    {
+        "title": "IUPC @ IUT Team Selection Contest",
+        "description": "CSTU Computer & Programming Club successfully organized the IUPC @ IUT Team Selection Contest. We sincerely thank everyone who participated and contributed to making the contest a success. A special thanks to Tanvir Sir for preparing the problem set and supporting this contest. We are also grateful to all the organizers and volunteers for their dedication and support. Congratulations to the selected participants. We wish our team all the best as they represent CSTU at IUPC @ IUT.",
+        "img": "/img/img3.jpg"
+    },
+    {
+        "title": "Team CSTU_DhuliKona at DUET CSE Carnival 2026",
+        "description": "CSTU Computer & Programming Club (CSTU CPC) proudly acknowledges the participation of Team CSTU_DhuliKona in the DUET CSE Carnival 2026 – Inter University Programming Contest (IUPC), where they represented Chandpur Science and Technology University (CSTU). Their participation in this prestigious national programming contest reflects their dedication, perseverance, and commitment to continuous learning. Events like these provide an excellent platform for aspiring programmers to strengthen their problem-solving abilities, exchange knowledge with talented participants from across the country, and gain valuable competitive experience.",
+        "img": "/img/img4.jpg"
+    },
+    {
+        "title": "CSTU at ICPC Dhaka Regional Contest 2025",
+        "description": "Proud to represent Chandpur Science and Technology University (CSTU) at the ICPC Dhaka Regional Contest 2025 (Onsite Main Round). Team CSTU_3_Billions competed against 313 teams from universities across the region and secured Rank 239. This prestigious contest provided valuable experience in competitive programming, strengthening our problem-solving abilities, teamwork, and perseverance. We are grateful for the continuous support from our university, mentors, and well-wishers as we move forward on this journey.",
+        "img": "/img/img5.jpg"
+    },
+    {
+        "title": "Quiz Competition Results – Workshop on “Monetize Your Apps & Ideas in bdapps”",
+        "description": "We are excited to announce the top performers of the quiz segment held during our recent workshop in collaboration with bdapps. The participants showed excellent enthusiasm and knowledge throughout the session. Top 5 Rank Holders: Shohanur Rahman Shohan, Talha Jubayer Ontu, Amitav, Baizid Bin Alam, and Md Rahat. Congratulations to all the winners! Your active participation and performance made the event even more memorable. A big thank you to every participant who joined the quiz and contributed to the successful outcome of the workshop. Stay connected with CSTU Computer and Programming Club (CPC) for more exciting events, competitions, and learning opportunities!",
+        "img": "/img/img6.jpg"
+    }
+]
