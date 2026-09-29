@@ -6,6 +6,7 @@ import Sidebar from "@/components/Sidebar";
 import FileUpload from "@/components/FileUpload";
 import { useSession } from "next-auth/react";
 import { User, Save, CheckCircle2 } from "lucide-react";
+import { getMemberClassLabel } from "@/lib/memberClasses";
 
 export default function MemberProfilePage() {
   const { data: session, update } = useSession();
@@ -19,6 +20,7 @@ export default function MemberProfilePage() {
     studentId: "",
     department: "",
     session: "",
+    memberClass: "MEMBER",
     avatarUrl: "",
     codeforcesHandle: "",
     vjudgeHandle: "",
@@ -38,6 +40,7 @@ export default function MemberProfilePage() {
           studentId: json.data.studentId || "",
           department: json.data.department || "",
           session: json.data.session || "",
+          memberClass: json.data.memberClass || "MEMBER",
           avatarUrl: json.data.avatarUrl || "",
           codeforcesHandle: json.data.codeforcesHandle || "",
           vjudgeHandle: json.data.vjudgeHandle || "",
@@ -110,7 +113,7 @@ export default function MemberProfilePage() {
 
             <div className="min-w-0 flex-1">
               <h2 className="text-2xl font-bold text-slate-900 truncate">{formData.name || "Member Name"}</h2>
-              <p className="text-xs font-semibold text-indigo-600 mt-1">{formData.designation || "Member"}</p>
+              <p className="text-xs font-semibold text-indigo-600 mt-1">{getMemberClassLabel(formData.memberClass)}</p>
               <p className="text-xs text-slate-500 mt-0.5">{formData.department || "CSE"} • Session: {formData.session || "2022-23"}</p>
             </div>
           </div>

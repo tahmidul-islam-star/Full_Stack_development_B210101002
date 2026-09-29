@@ -53,6 +53,7 @@ export async function PUT(req, { params }) {
         existingUser.name = application.name || existingUser.name;
         existingUser.department = application.department || existingUser.department;
         existingUser.session = application.session || existingUser.session;
+        existingUser.memberClass = application.memberClass || existingUser.memberClass || "MEMBER";
         if (application.codeforcesHandle) existingUser.codeforcesHandle = application.codeforcesHandle;
         if (application.phone) existingUser.phone = application.phone;
         await existingUser.save();
@@ -63,6 +64,7 @@ export async function PUT(req, { params }) {
           email: application.email.toLowerCase(),
           password: userPassword || (await bcrypt.hash("member123", 10)),
           role: "MEMBER",
+          memberClass: application.memberClass || "MEMBER",
           studentId: application.studentId,
           department: application.department,
           session: application.session,

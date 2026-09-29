@@ -24,12 +24,13 @@ import User from "@/models/User";
 import Notice from "@/models/Notice";
 import ContestResult from "@/models/ContestResult";
 import { sortByDesignation } from "@/lib/designations";
+import { getMemberClassLabel } from "@/lib/memberClasses";
 
 export default async function Home() {
   await connectToDatabase();
 
   const rawMembers = await User.find({ status: "ACTIVE", role: "MEMBER" })
-    .select("name designation department session avatarUrl codeforcesHandle")
+    .select("name designation memberClass department session avatarUrl codeforcesHandle")
     .lean();
 
   const members = sortByDesignation(rawMembers).slice(0, 6);
@@ -295,8 +296,9 @@ export default async function Home() {
                   {/* Designation Badge */}
                   <div className="mt-1">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200/80">
-                      {member.designation || "Member"}
+                      {getMemberClassLabel(member.memberClass)}
                     </span>
+                    <span className="text-xs text-slate-500">{member.designation || "Member"}</span>
                   </div>
 
                   {/* Session & Department */}

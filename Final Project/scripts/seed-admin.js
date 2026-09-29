@@ -34,6 +34,7 @@ const UserSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true },
     role: { type: String, enum: ["ADMIN", "MEMBER"], default: "MEMBER" },
+    memberClass: { type: String, enum: ["MEMBER", "EXECUTIVE_MEMBER"], default: "MEMBER" },
     studentId: { type: String, default: "" },
     department: { type: String, default: "Computer Science and Engineering" },
     session: { type: String, default: "2021-22" },

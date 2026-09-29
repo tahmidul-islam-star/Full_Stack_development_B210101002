@@ -20,6 +20,7 @@ import {
   FileSpreadsheet,
   FileText,
 } from "lucide-react";
+import { getMemberClassLabel } from "@/lib/memberClasses";
 
 export default function AdminApplicationsPage() {
   const [applications, setApplications] = useState([]);
@@ -262,6 +263,7 @@ export default function AdminApplicationsPage() {
                           </p>
                           <p className="text-xs text-slate-800">{app.department}</p>
                           <p className="text-xs text-slate-500">Session: {app.session}</p>
+                          <p className="text-xs text-indigo-600">{getMemberClassLabel(app.memberClass)}</p>
                         </td>
 
                         <td className="px-6 py-4 font-mono text-xs">
@@ -391,6 +393,10 @@ export default function AdminApplicationsPage() {
               <div className="flex justify-between py-1 border-b border-slate-200/60">
                 <span className="text-slate-500 font-medium">Session:</span>
                 <span className="text-slate-900">{selectedApp.session}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-200/60">
+                <span className="text-slate-500 font-medium">Member Class:</span>
+                <span className="font-semibold text-indigo-700">{getMemberClassLabel(selectedApp.memberClass)}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-200/60">
                 <span className="text-slate-500 font-medium">Codeforces Handle:</span>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { ShieldCheck, CheckCircle2, Award } from "lucide-react";
+import { getMemberClassLabel } from "@/lib/memberClasses";
 
 export default function IDCard({ user }) {
   const [avatarDataUrl, setAvatarDataUrl] = useState("");
@@ -45,6 +46,7 @@ export default function IDCard({ user }) {
     organization: "CSTU Computer & Programming Club",
     name: user?.name || "",
     id: user?.studentId || "",
+    memberClass: getMemberClassLabel(user?.memberClass),
     designation: user?.designation || "Member",
     department: user?.department || "CSE",
     session: user?.session || "2022-23",

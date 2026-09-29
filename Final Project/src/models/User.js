@@ -24,6 +24,12 @@ const UserSchema = new mongoose.Schema(
       default: "MEMBER",
       required: true,
     },
+    memberClass: {
+      type: String,
+      enum: ["MEMBER", "EXECUTIVE_MEMBER"],
+      default: "MEMBER",
+      required: true,
+    },
     studentId: {
       type: String,
       trim: true,

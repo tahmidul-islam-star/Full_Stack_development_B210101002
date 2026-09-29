@@ -64,6 +64,7 @@ export async function PUT(req, { params }) {
     }
 
     if (body.role) user.role = body.role;
+    if (body.memberClass) user.memberClass = body.memberClass;
     if (body.status) user.status = body.status;
     if (body.designation) user.designation = body.designation;
     if (body.name) user.name = body.name;

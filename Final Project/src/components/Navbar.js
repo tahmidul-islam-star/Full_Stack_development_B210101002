@@ -18,7 +18,7 @@ export default function Navbar() {
     { href: "/notices", label: "Notices" },
     { href: "/events", label: "Events" },
     { href: "/contests", label: "Contests" },
-    { href: "/members", label: "Members" },
+    { href: "/members", label: "Executive Members" },
     { href: "/advisor", label: "Advisors" },
   ];
 

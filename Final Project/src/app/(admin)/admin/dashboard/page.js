@@ -15,6 +15,7 @@ import {
   ArrowRight,
   UserCheck,
 } from "lucide-react";
+import { getMemberClassLabel } from "@/lib/memberClasses";
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState(null);
@@ -177,6 +178,7 @@ export default function AdminDashboardPage() {
                         <p className="text-xs text-slate-500 mt-0.5">
                           ID: <span className="text-indigo-600 font-mono font-semibold">{app.studentId}</span>
                         </p>
+                        <p className="text-[11px] text-indigo-600">{getMemberClassLabel(app.memberClass)}</p>
                         <p className="text-[11px] text-slate-400 font-mono">
                           TxID: {app.paymentMethod} - {app.transactionNumber}
                         </p>

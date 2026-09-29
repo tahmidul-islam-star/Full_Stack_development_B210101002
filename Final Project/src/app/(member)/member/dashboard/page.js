@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
 import { UserCheck, IdCard, FileCheck, Trophy, Bell, ArrowRight, Sparkles, Calendar } from "lucide-react";
+import { getMemberClassLabel } from "@/lib/memberClasses";
 
 export default function MemberDashboardPage() {
   const [data, setData] = useState(null);
@@ -55,7 +56,7 @@ export default function MemberDashboardPage() {
                   Welcome back, {data?.profile?.name || "Member"}!
                 </h1>
                 <p className="text-indigo-100 text-xs sm:text-sm mt-1">
-                  Designation: <span className="text-white font-semibold">{data?.profile?.designation || "Member"}</span> • Dept: {data?.profile?.department || "CSE"}
+                  Member Class: <span className="text-white font-semibold">{getMemberClassLabel(data?.profile?.memberClass)}</span> • Designation: <span className="text-white font-semibold">{data?.profile?.designation || "Member"}</span> • Dept: {data?.profile?.department || "CSE"}
                 </p>
               </div>
             </div>

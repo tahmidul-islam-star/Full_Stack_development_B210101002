@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import FileUpload from "@/components/FileUpload";
 import { Users, Plus, Search, ShieldCheck, CheckCircle2, XCircle, Trash2, Edit2, X, Globe, FileSpreadsheet, ExternalLink } from "lucide-react";
+import { getMemberClassLabel } from "@/lib/memberClasses";
 
 export default function AdminMembersPage() {
   const [members, setMembers] = useState([]);
@@ -22,6 +23,7 @@ export default function AdminMembersPage() {
     department: "Computer Science & Engineering",
     session: "2022-23",
     designation: "Member",
+    memberClass: "MEMBER",
     role: "MEMBER",
     phone: "",
     avatarUrl: "",
@@ -59,6 +61,7 @@ export default function AdminMembersPage() {
       department: "Computer Science & Engineering",
       session: "2022-23",
       designation: "Member",
+      memberClass: "MEMBER",
       role: "MEMBER",
       phone: "",
       avatarUrl: "",
@@ -80,6 +83,7 @@ export default function AdminMembersPage() {
       department: member.department || "",
       session: member.session || "",
       designation: member.designation || "Member",
+      memberClass: member.memberClass || "MEMBER",
       role: member.role || "MEMBER",
       phone: member.phone || "",
       avatarUrl: member.avatarUrl || "",
@@ -210,7 +214,7 @@ export default function AdminMembersPage() {
                 <thead className="bg-slate-100 text-xs uppercase font-bold text-slate-600 border-b border-slate-200">
                   <tr>
                     <th className="px-6 py-4">Member Info</th>
-                    <th className="px-6 py-4">Designation</th>
+                    <th className="px-6 py-4">Member Class / Designation</th>
                     <th className="px-6 py-4">Department / Session</th>
                     <th className="px-6 py-4">Role</th>
                     <th className="px-6 py-4">Status</th>
@@ -252,8 +256,9 @@ export default function AdminMembersPage() {
 
                         <td className="px-6 py-4">
                           <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                            {m.designation || "Member"}
+                            {getMemberClassLabel(m.memberClass)}
                           </span>
+                          <p className="text-xs text-slate-500 mt-1">{m.designation || "Member"}</p>
                         </td>
 
                         <td className="px-6 py-4">
@@ -421,6 +426,17 @@ export default function AdminMembersPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Member Class</label>
+                  <select
+                    value={formData.memberClass}
+                    onChange={(e) => setFormData({ ...formData, memberClass: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 outline-none focus:border-indigo-600 focus:bg-white"
+                  >
+                    <option value="MEMBER">Member</option>
+                    <option value="EXECUTIVE_MEMBER">Executive Member</option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Department</label>
                   <input

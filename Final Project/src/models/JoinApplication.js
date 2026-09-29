@@ -37,6 +37,12 @@ const JoinApplicationSchema = new mongoose.Schema(
       required: [true, "Session is required"],
       default: "2022-23",
     },
+    memberClass: {
+      type: String,
+      enum: ["MEMBER", "EXECUTIVE_MEMBER"],
+      default: "MEMBER",
+      required: true,
+    },
     codeforcesHandle: {
       type: String,
       trim: true,

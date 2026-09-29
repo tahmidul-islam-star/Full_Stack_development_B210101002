@@ -44,6 +44,7 @@ export async function GET(req) {
     const recentApplications = await ContestApplication.find()
       .populate("user", "name email studentId department avatarUrl")
       .populate("contest", "title")
+      .select("name email studentId department session memberClass designation paymentMethod transactionNumber status")
       .sort({ createdAt: -1 })
       .limit(5);
 

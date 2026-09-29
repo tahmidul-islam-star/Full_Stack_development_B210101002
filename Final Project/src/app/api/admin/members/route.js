@@ -66,7 +66,7 @@ export async function POST(req) {
     await connectToDatabase();
     const body = await req.json();
 
-    const { email, password, name, role, studentId, department, session: userSession, designation, phone, avatarUrl, codeforcesHandle, vjudgeHandle, githubUrl } = body;
+    const { email, password, name, role, memberClass, studentId, department, session: userSession, designation, phone, avatarUrl, codeforcesHandle, vjudgeHandle, githubUrl } = body;
 
     if (!email || !password || !name) {
       return NextResponse.json(
@@ -90,6 +90,7 @@ export async function POST(req) {
       email: email.toLowerCase(),
       password: hashedPassword,
       role: role || "MEMBER",
+      memberClass: memberClass || "MEMBER",
       studentId: studentId || "",
       department: department || "Computer Science & Engineering",
       session: userSession || "2022-23",

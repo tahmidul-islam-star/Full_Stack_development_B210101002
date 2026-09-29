@@ -19,6 +19,7 @@ import {
   ExternalLink,
   Lock,
 } from "lucide-react";
+import { getMemberClassLabel } from "@/lib/memberClasses";
 
 export default function JoinPage() {
   const [formData, setFormData] = useState({
@@ -30,6 +31,7 @@ export default function JoinPage() {
     phone: "",
     department: "Computer Science & Engineering",
     session: "2022-23",
+    memberClass: "MEMBER",
     codeforcesHandle: "",
     paymentMethod: "bKash",
     transactionNumber: "",
@@ -85,6 +87,7 @@ export default function JoinPage() {
         phone: "",
         department: "Computer Science & Engineering",
         session: "2022-23",
+        memberClass: "MEMBER",
         codeforcesHandle: "",
         paymentMethod: "bKash",
         transactionNumber: "",
@@ -289,6 +292,24 @@ export default function JoinPage() {
                     placeholder="e.g. 2022-23"
                     className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 outline-none focus:border-indigo-600 focus:bg-white transition-colors"
                   />
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Member Class <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    name="memberClass"
+                    required
+                    value={formData.memberClass}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 outline-none focus:border-indigo-600 focus:bg-white transition-colors"
+                  >
+                    <option value="MEMBER">{getMemberClassLabel("MEMBER")}</option>
+                    <option value="EXECUTIVE_MEMBER">{getMemberClassLabel("EXECUTIVE_MEMBER")}</option>
+                  </select>
                 </div>
               </div>
 

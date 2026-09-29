@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/db";
 import User from "@/models/User";
 import { sortByDesignation } from "@/lib/designations";
+import { isExecutiveDesignation } from "@/lib/memberClasses";
 
 export async function GET(req) {
   try {
@@ -27,7 +28,13 @@ export async function GET(req) {
       .select("-password")
       .lean();
 
-    const sortedUsers = sortByDesignation(rawUsers);
+    const sortedUsers = sortByDesignation(rawUsers).map((user) => ({
+      ...user,
+      memberClass:
+        user.memberClass === "EXECUTIVE_MEMBER" || isExecutiveDesignation(user.designation)
+          ? "EXECUTIVE_MEMBER"
+          : user.memberClass || "MEMBER",
+    }));
 
     return NextResponse.json({ success: true, data: sortedUsers });
   } catch (error) {
