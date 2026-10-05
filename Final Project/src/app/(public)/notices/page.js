@@ -1,11 +1,16 @@
-import Navbar from "@/components/Navbar";
 import connectToDatabase from "@/lib/db";
 import Notice from "@/models/Notice";
-import { Bell, Pin, Calendar, Sparkles } from "lucide-react";
+import { Bell, Pin, Calendar } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 export default async function NoticesPage() {
   await connectToDatabase();
-  const notices = await Notice.find().sort({ isPinned: -1, createdAt: -1 });
+  const notices = await Notice.find({ isPublished: { $ne: false } }).sort({
+    isPinned: -1,
+    noticeDate: -1,
+    createdAt: -1,
+  });
 
   return (
     <>
@@ -50,9 +55,15 @@ export default async function NoticesPage() {
                 <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                   <div className="flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{new Date(n.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                    <span>{new Date(n.noticeDate || n.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
                   </div>
 
+                  <div className="flex items-center gap-4">
+                  {n.externalLink && (
+                    <a href={n.externalLink} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline font-medium">
+                      More information →
+                    </a>
+                  )}
                   {n.attachmentUrl && (
                     <a
                       href={n.attachmentUrl}
@@ -63,6 +74,7 @@ export default async function NoticesPage() {
                       Download Attachment →
                     </a>
                   )}
+                  </div>
                 </div>
               </div>
             ))}

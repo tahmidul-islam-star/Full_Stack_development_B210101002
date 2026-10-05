@@ -1,46 +1,68 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
 import FileUpload from "@/components/FileUpload";
-import { Bell, Plus, Pin, Trash2, Edit2, X, CheckCircle2 } from "lucide-react";
+import { Bell, Plus, Pin, Trash2, Edit2, X } from "lucide-react";
 
 export default function AdminNoticesPage() {
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingNotice, setEditingNotice] = useState(null);
+  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
     title: "",
     content: "",
     category: "ANNOUNCEMENT",
     isPinned: false,
+    isPublished: true,
+    noticeDate: "",
     attachmentUrl: "",
+    externalLink: "",
   });
   const [submitting, setSubmitting] = useState(false);
 
   const fetchNotices = async () => {
     try {
-      setLoading(true);
       const res = await fetch("/api/admin/notices");
       const json = await res.json();
-      if (json.success) setNotices(json.data || []);
+      if (!res.ok || !json.success) throw new Error(json.error || "Unable to load notices.");
+      setNotices(json.data || []);
     } catch (err) {
       console.error(err);
+      setError(err.message || "Unable to load notices.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchNotices();
+    let active = true;
+    fetch("/api/admin/notices", { cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || "Unable to load notices.");
+        }
+        if (active) setNotices(result.data || []);
+      })
+      .catch((fetchError) => {
+        console.error("Notice management load error:", fetchError);
+        if (active) setError(fetchError.message || "Unable to load notices.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleOpenCreateModal = () => {
     setEditingNotice(null);
-    setFormData({ title: "", content: "", category: "ANNOUNCEMENT", isPinned: false, attachmentUrl: "" });
+    setFormData({ title: "", content: "", category: "ANNOUNCEMENT", isPinned: false, isPublished: true, noticeDate: "", attachmentUrl: "", externalLink: "" });
     setModalOpen(true);
   };
 
@@ -51,7 +73,10 @@ export default function AdminNoticesPage() {
       content: notice.content || "",
       category: notice.category || "ANNOUNCEMENT",
       isPinned: notice.isPinned || false,
+      isPublished: notice.isPublished !== false,
+      noticeDate: notice.noticeDate ? new Date(notice.noticeDate).toISOString().split("T")[0] : "",
       attachmentUrl: notice.attachmentUrl || "",
+      externalLink: notice.externalLink || "",
     });
     setModalOpen(true);
   };
@@ -59,6 +84,7 @@ export default function AdminNoticesPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setError("");
 
     try {
       const url = editingNotice ? `/api/admin/notices/${editingNotice._id}` : "/api/admin/notices";
@@ -70,13 +96,15 @@ export default function AdminNoticesPage() {
         body: JSON.stringify(formData),
       });
 
-      if (res.ok) {
-        setModalOpen(false);
-        setFormData({ title: "", content: "", category: "ANNOUNCEMENT", isPinned: false, attachmentUrl: "" });
-        fetchNotices();
-      }
+      const result = await res.json();
+      if (!res.ok || !result.success) throw new Error(result.error || "Unable to save notice.");
+      setModalOpen(false);
+      setFormData({ title: "", content: "", category: "ANNOUNCEMENT", isPinned: false, isPublished: true, noticeDate: "", attachmentUrl: "", externalLink: "" });
+      fetchNotices();
+      if (result.warning) setError(result.warning);
     } catch (err) {
       console.error(err);
+      setError(err.message || "Unable to save notice.");
     } finally {
       setSubmitting(false);
     }
@@ -86,9 +114,13 @@ export default function AdminNoticesPage() {
     if (!confirm("Delete this notice?")) return;
     try {
       const res = await fetch(`/api/admin/notices/${id}`, { method: "DELETE" });
-      if (res.ok) fetchNotices();
+      const result = await res.json();
+      if (!res.ok || !result.success) throw new Error(result.error || "Unable to delete notice.");
+      fetchNotices();
+      if (result.warning) setError(result.warning);
     } catch (err) {
       console.error(err);
+      setError(err.message || "Unable to delete notice.");
     }
   };
 
@@ -111,6 +143,8 @@ export default function AdminNoticesPage() {
               <span>Create New Notice</span>
             </button>
           </div>
+
+          {error && <p role="alert" className="mb-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</p>}
 
           {/* Notices Grid */}
           <div className="grid md:grid-cols-2 gap-6">
@@ -137,6 +171,9 @@ export default function AdminNoticesPage() {
                           <Pin className="w-3.5 h-3.5" /> Pinned
                         </span>
                       )}
+                      <span className={`text-xs font-semibold ${n.isPublished !== false ? "text-emerald-700" : "text-slate-500"}`}>
+                        {n.isPublished !== false ? "Published" : "Hidden"}
+                      </span>
                     </div>
 
                     <h3 className="font-bold text-lg text-slate-900">{n.title}</h3>
@@ -182,6 +219,7 @@ export default function AdminNoticesPage() {
             <h2 className="text-2xl font-bold text-slate-900 mb-6">
               {editingNotice ? "Edit Notice" : "Create New Notice"}
             </h2>
+            {error && <p role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -229,13 +267,30 @@ export default function AdminNoticesPage() {
                   className="w-4 h-4 rounded text-indigo-600"
                 />
                 <label htmlFor="isPinned" className="text-xs font-medium text-slate-700">
-                  Pin this notice to top of homepage
+                  Pin this notice to the top of public notices
                 </label>
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label className="block text-xs font-semibold text-slate-600 uppercase">
+                  Notice date
+                  <input type="date" value={formData.noticeDate} onChange={(e) => setFormData({ ...formData, noticeDate: e.target.value })} className="mt-1 w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900" />
+                </label>
+                <label className="flex items-center gap-2 self-end pb-3 text-xs font-medium text-slate-700">
+                  <input type="checkbox" checked={formData.isPublished} onChange={(e) => setFormData({ ...formData, isPublished: e.target.checked })} className="h-4 w-4 rounded text-indigo-600" />
+                  Publish this notice
+                </label>
+              </div>
+
+              <label className="block text-xs font-semibold text-slate-600 uppercase">
+                Optional external link
+                <input type="url" value={formData.externalLink} onChange={(e) => setFormData({ ...formData, externalLink: e.target.value })} placeholder="https://..." className="mt-1 w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900" />
+              </label>
 
               <FileUpload
                 label="Attachment (PDF / Image)"
                 value={formData.attachmentUrl}
+                accept="image/jpeg,image/png,image/webp,image/gif,image/avif,application/pdf"
                 onUploadComplete={(url) => setFormData({ ...formData, attachmentUrl: url })}
               />
 

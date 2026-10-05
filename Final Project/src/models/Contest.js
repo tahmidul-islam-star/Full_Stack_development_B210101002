@@ -19,6 +19,14 @@ const ContestSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    registrationLink: {
+      type: String,
+      default: "",
+    },
+    resultLink: {
+      type: String,
+      default: "",
+    },
     contestDate: {
       type: Date,
       required: [true, "Contest date is required"],
@@ -30,6 +38,14 @@ const ContestSchema = new mongoose.Schema(
       type: String,
       enum: ["UPCOMING", "RUNNING", "COMPLETED"],
       default: "UPCOMING",
+    },
+    isPublished: {
+      type: Boolean,
+      default: true,
+    },
+    isFeatured: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

@@ -20,7 +20,19 @@ const NoticeSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isPublished: {
+      type: Boolean,
+      default: true,
+    },
+    noticeDate: {
+      type: Date,
+      default: null,
+    },
     attachmentUrl: {
+      type: String,
+      default: "",
+    },
+    externalLink: {
       type: String,
       default: "",
     },

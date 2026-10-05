@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import connectToDatabase from "@/lib/db";
 import User from "@/models/User";
+import { cleanupR2Upload } from "@/lib/r2";
 import { getServerSession } from "next-auth";
 import { getToken } from "next-auth/jwt";
 import { authOptions } from "@/lib/auth";
@@ -86,12 +87,17 @@ export async function PUT(req, { params }) {
       user.password = await bcrypt.hash(body.password, 10);
     }
 
+    const previousAvatarUrl = user.avatarUrl;
     await user.save();
+    const warning =
+      body.avatarUrl !== undefined && body.avatarUrl !== previousAvatarUrl
+        ? await cleanupR2Upload(previousAvatarUrl)
+        : null;
 
     const userObj = user.toObject();
     delete userObj.password;
 
-    return NextResponse.json({ success: true, data: userObj });
+    return NextResponse.json({ success: true, data: userObj, warning });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: error.message },

@@ -4,6 +4,8 @@ import User from "@/models/User";
 import { sortByDesignation } from "@/lib/designations";
 import { isExecutiveDesignation } from "@/lib/memberClasses";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req) {
   try {
     await connectToDatabase();
@@ -24,17 +26,29 @@ export async function GET(req) {
       ];
     }
 
-    const rawUsers = await User.find(query)
-      .select("-password")
-      .lean();
+    const rawUsers = await User.find(query).select("-password").lean();
 
-    const sortedUsers = sortByDesignation(rawUsers).map((user) => ({
+    const visibleUsers = rawUsers.filter((user) => user.isProfileVisible !== false);
+    const designationOrder = new Map(
+      sortByDesignation(visibleUsers).map((user, index) => [
+        user._id.toString(),
+        index,
+      ])
+    );
+    const sortedUsers = [...visibleUsers]
+      .sort(
+        (a, b) =>
+          (a.displayOrder || 0) - (b.displayOrder || 0) ||
+          designationOrder.get(a._id.toString()) -
+            designationOrder.get(b._id.toString())
+      )
+      .map((user) => ({
       ...user,
       memberClass:
         user.memberClass === "EXECUTIVE_MEMBER" || isExecutiveDesignation(user.designation)
           ? "EXECUTIVE_MEMBER"
           : user.memberClass || "MEMBER",
-    }));
+      }));
 
     return NextResponse.json({ success: true, data: sortedUsers });
   } catch (error) {

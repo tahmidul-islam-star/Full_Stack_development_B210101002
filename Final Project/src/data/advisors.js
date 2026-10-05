@@ -1,0 +1,40 @@
+const advisors = [
+  {
+    id: "atiqur-rahman",
+    name: "Professor Dr. M. Atiqur Rahman",
+    title: "Chief Advisor, CSTU CPC",
+    designation: "Vice-Chancellor",
+    department: null,
+    institution: "Chandpur Science and Technology University",
+    badge: "Chief Advisor",
+    bio: "Professor Dr. M. Atiqur Rahman serves as the Vice-Chancellor of Chandpur Science and Technology University (CSTU) and the Chief Advisor of CSTU Computer & Programming Club (CPC). He provides overall vision and strategic guidance for promoting technical excellence, research, and innovation across the university.",
+    email: "vc@cstu.ac.bd",
+    imageUrl: "",
+  },
+  {
+    id: "jahidul-islam",
+    name: "Md. Jahidul Islam",
+    title: "Advisor, CSTU CPC",
+    designation: "Chairman",
+    department: "Department of Computer Science and Engineering",
+    institution: "Chandpur Science and Technology University",
+    badge: "Advisor",
+    bio: "Md. Jahidul Islam is the Chairman of the Department of Computer Science and Engineering at CSTU. As an Advisor to CSTU CPC, he actively mentors competitive programmers, guides student developers, and fosters an empowering technical culture.",
+    email: "jahidul@cse.cstu.ac.bd",
+    imageUrl: "",
+  },
+  {
+    id: "sohel-rana",
+    name: "Sohel Rana",
+    title: "Advisor, CSTU CPC",
+    designation: "Chairman",
+    department: "Department of Information and Communication Technology",
+    institution: "Chandpur Science and Technology University",
+    badge: "Advisor",
+    bio: "Sohel Rana is the Chairman of the Department of Information and Communication Technology at CSTU. Serving as an Advisor for CSTU CPC, he supports student technology initiatives, hackathons, and skill-building programs.",
+    email: "sohel@ict.cstu.ac.bd",
+    imageUrl: "",
+  },
+];
+
+export default advisors;

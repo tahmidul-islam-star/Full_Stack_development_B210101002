@@ -6,7 +6,7 @@ import { useSession, signOut } from "next-auth/react";
 import { Code2, LogOut, LayoutDashboard, User, ShieldCheck, Menu, X } from "lucide-react";
 import { useState } from "react";
 
-export default function Navbar() {
+export default function Navbar({ settings }) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -14,12 +14,10 @@ export default function Navbar() {
   const navLinks = [
     { href: "/", label: "Home" },
     { href: "/join", label: "Join Club" },
-    { href: "/gallery", label: "Gallery" },
     { href: "/notices", label: "Notices" },
-    { href: "/events", label: "Events" },
-    { href: "/contests", label: "Contests" },
+    { href: "/gallery", label: "Gallery" },
     { href: "/members", label: "Executive Members" },
-    { href: "/advisor", label: "Advisors" },
+    { href: "/advisor", label: "Advisor Panel" },
   ];
 
   const dashboardUrl =
@@ -38,21 +36,23 @@ export default function Navbar() {
             </div>
             <div>
               <div className="font-bold text-lg tracking-tight text-slate-900">
-                CSTU CPC
+                {settings?.clubName || "CSTU CPC"}
               </div>
-              <p className="text-xs text-slate-500 font-medium">Code • Learn • Build • Lead</p>
+              <p className="text-xs text-slate-500 font-medium">{settings?.tagline || "Code • Learn • Build • Lead"}</p>
             </div>
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-1 bg-slate-100/80 p-1.5 rounded-xl border border-slate-200">
+          <nav className="hidden xl:flex items-center gap-0.5 bg-slate-100/80 p-1.5 rounded-xl border border-slate-200">
             {navLinks.map((link) => {
-              const isActive = pathname === link.href;
+              const isActive =
+                pathname === link.href ||
+                (link.href === "/advisor" && pathname === "/advisors");
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  className={`px-2.5 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200 ${
                     isActive
                       ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20 font-semibold"
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
@@ -65,7 +65,7 @@ export default function Navbar() {
           </nav>
 
           {/* Auth Controls */}
-          <div className="hidden md:flex items-center gap-2.5">
+          <div className="hidden xl:flex items-center gap-2.5">
             {status === "loading" ? (
               <div className="w-32 h-9 bg-slate-200 animate-pulse rounded-lg"></div>
             ) : session ? (
@@ -117,9 +117,11 @@ export default function Navbar() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center gap-2">
+          <div className="xl:hidden flex items-center gap-2">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-expanded={mobileMenuOpen}
+              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
               className="p-2 rounded-xl bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -130,7 +132,7 @@ export default function Navbar() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-slate-200 bg-white/95 backdrop-blur-xl px-4 pt-3 pb-6 space-y-3 shadow-lg">
+        <div className="xl:hidden border-b border-slate-200 bg-white/95 backdrop-blur-xl px-4 pt-3 pb-6 space-y-3 shadow-lg">
           {navLinks.map((link) => (
             <Link
               key={link.href}

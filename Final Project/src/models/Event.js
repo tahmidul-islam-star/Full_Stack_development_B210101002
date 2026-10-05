@@ -27,6 +27,19 @@ const EventSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    status: {
+      type: String,
+      enum: ["UPCOMING", "ONGOING", "COMPLETED"],
+      default: "UPCOMING",
+    },
+    isPublished: {
+      type: Boolean,
+      default: true,
+    },
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
     isActive: {
       type: Boolean,
       default: true,

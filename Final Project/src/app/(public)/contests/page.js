@@ -1,18 +1,25 @@
-import Navbar from "@/components/Navbar";
 import connectToDatabase from "@/lib/db";
 import Contest from "@/models/Contest";
 import ContestResult from "@/models/ContestResult";
 import { Trophy, Calendar, ExternalLink, Clock, Sparkles } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function ContestsPage() {
   await connectToDatabase();
 
-  const contests = await Contest.find().sort({ contestDate: -1 });
+  const contests = await Contest.find({ isPublished: { $ne: false } }).sort({
+    isFeatured: -1,
+    contestDate: 1,
+  });
 
-  const standings = await ContestResult.find()
-    .populate("user", "name department studentId avatarUrl")
-    .sort({ problemsSolved: -1, rating: -1 })
-    .limit(10);
+  const publishedContestIds = contests.map((contest) => contest._id);
+  const standings = publishedContestIds.length
+    ? await ContestResult.find({ contest: { $in: publishedContestIds } })
+        .populate("user", "name department studentId avatarUrl")
+        .sort({ problemsSolved: -1, rating: -1 })
+        .limit(10)
+    : [];
 
   return (
     <>
@@ -64,6 +71,7 @@ export default async function ContestsPage() {
                     </div>
 
                     <h3 className="font-bold text-lg text-slate-900">{c.title}</h3>
+                    {c.isFeatured && <span className="mt-2 inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700">Featured contest</span>}
                     <p className="text-sm text-slate-600 mt-1 line-clamp-3 leading-relaxed">{c.description}</p>
                   </div>
 
@@ -81,6 +89,12 @@ export default async function ContestsPage() {
                         </a>
                       )}
                     </div>
+                    {(c.registrationLink || c.resultLink) && (
+                      <div className="flex flex-wrap gap-4 text-xs font-semibold">
+                        {c.registrationLink && <a href={c.registrationLink} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">Register</a>}
+                        {c.resultLink && <a href={c.resultLink} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">Results</a>}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

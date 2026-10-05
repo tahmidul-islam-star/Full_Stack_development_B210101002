@@ -1,11 +1,15 @@
-import Navbar from "@/components/Navbar";
 import connectToDatabase from "@/lib/db";
 import Event from "@/models/Event";
 import { Calendar, MapPin, ExternalLink, Sparkles } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function EventsPage() {
   await connectToDatabase();
-  const events = await Event.find().sort({ eventDate: 1 });
+  const events = await Event.find({
+    isActive: true,
+    isPublished: { $ne: false },
+  }).sort({ isFeatured: -1, eventDate: 1 });
 
   return (
     <>
@@ -39,12 +43,14 @@ export default async function EventsPage() {
 
                 <div className="p-6 sm:p-8 flex-1 flex flex-col justify-between">
                   <div>
-                    <div className="flex items-center gap-2 text-xs font-semibold text-indigo-600 mb-2">
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-indigo-600 mb-2">
                       <Calendar className="w-4 h-4" />
-                      <span>{new Date(evt.eventDate).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</span>
+                      <span>{new Date(evt.eventDate).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                      {evt.status && <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] uppercase text-slate-600">{evt.status}</span>}
                     </div>
 
                     <h2 className="text-xl font-bold text-slate-900 mb-3">{evt.title}</h2>
+                    {evt.isFeatured && <span className="mb-2 inline-flex w-fit rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700">Featured event</span>}
                     <p className="text-sm text-slate-600 leading-relaxed mb-6">{evt.description}</p>
                   </div>
 

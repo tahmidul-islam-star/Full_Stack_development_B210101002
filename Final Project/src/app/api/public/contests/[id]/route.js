@@ -6,7 +6,10 @@ export async function GET(req, { params }) {
   try {
     await connectToDatabase();
     const { id } = await params;
-    const contest = await Contest.findById(id);
+    const contest = await Contest.findOne({
+      _id: id,
+      isPublished: { $ne: false },
+    });
     if (!contest) return NextResponse.json({ success: false, error: "Contest not found" }, { status: 404 });
     return NextResponse.json({ success: true, data: contest });
   } catch (error) {

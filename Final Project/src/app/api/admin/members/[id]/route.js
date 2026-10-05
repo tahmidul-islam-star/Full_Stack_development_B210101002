@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import connectToDatabase from "@/lib/db";
 import User from "@/models/User";
+import { cleanupR2Upload } from "@/lib/r2";
 import { getServerSession } from "next-auth";
 import { getToken } from "next-auth/jwt";
 import { authOptions } from "@/lib/auth";
@@ -67,6 +68,20 @@ export async function PUT(req, { params }) {
     if (body.memberClass) user.memberClass = body.memberClass;
     if (body.status) user.status = body.status;
     if (body.designation) user.designation = body.designation;
+    if (body.bio !== undefined) user.bio = body.bio;
+    if (body.displayOrder !== undefined) {
+      const displayOrder = Number(body.displayOrder);
+      if (!Number.isFinite(displayOrder)) {
+        return NextResponse.json(
+          { success: false, error: "Display order must be a number." },
+          { status: 400 }
+        );
+      }
+      user.displayOrder = displayOrder;
+    }
+    if (body.isProfileVisible !== undefined) {
+      user.isProfileVisible = Boolean(body.isProfileVisible);
+    }
     if (body.name) user.name = body.name;
     if (body.email) user.email = body.email.toLowerCase();
     if (body.studentId !== undefined) user.studentId = body.studentId;
@@ -82,12 +97,17 @@ export async function PUT(req, { params }) {
       user.password = await bcrypt.hash(body.password, 10);
     }
 
+    const previousAvatarUrl = user.avatarUrl;
     await user.save();
+    const warning =
+      body.avatarUrl !== undefined && body.avatarUrl !== previousAvatarUrl
+        ? await cleanupR2Upload(previousAvatarUrl)
+        : null;
 
     const userObj = user.toObject();
     delete userObj.password;
 
-    return NextResponse.json({ success: true, data: userObj });
+    return NextResponse.json({ success: true, data: userObj, warning });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: error.message },
@@ -126,10 +146,12 @@ export async function DELETE(req, { params }) {
     }
 
     await User.findByIdAndDelete(id);
+    const warning = await cleanupR2Upload(targetUser.avatarUrl);
 
     return NextResponse.json({
       success: true,
       message: "Member removed successfully",
+      warning,
     });
   } catch (error) {
     return NextResponse.json(

@@ -1,47 +1,33 @@
 "use client";
 
-import Navbar from "@/components/Navbar";
-import { UserCheck, Shield, Building2, GraduationCap, X, Award, ExternalLink } from "lucide-react";
-import { useState } from "react";
-
-const staticAdvisors = [
-  {
-    id: "atiqur-rahman",
-    name: "Professor Dr. M. Atiqur Rahman",
-    title: "Chief Advisor, CSTU CPC",
-    designation: "Vice-Chancellor",
-    department: null,
-    institution: "Chandpur Science and Technology University",
-    badge: "Chief Advisor",
-    bio: "Professor Dr. M. Atiqur Rahman serves as the Vice-Chancellor of Chandpur Science and Technology University (CSTU) and the Chief Advisor of CSTU Computer & Programming Club (CPC). He provides overall vision and strategic guidance for promoting technical excellence, research, and innovation across the university.",
-    email: "vc@cstu.ac.bd",
-  },
-  {
-    id: "jahidul-islam",
-    name: "Md. Jahidul Islam",
-    title: "Advisor, CSTU CPC",
-    designation: "Chairman",
-    department: "Department of Computer Science and Engineering",
-    institution: "Chandpur Science and Technology University",
-    badge: "Advisor",
-    bio: "Md. Jahidul Islam is the Chairman of the Department of Computer Science and Engineering at CSTU. As an Advisor to CSTU CPC, he actively mentors competitive programmers, guides student developers, and fosters an empowering technical culture.",
-    email: "jahidul@cse.cstu.ac.bd",
-  },
-  {
-    id: "sohel-rana",
-    name: "Sohel Rana",
-    title: "Advisor, CSTU CPC",
-    designation: "Chairman",
-    department: "Department of Information and Communication Technology",
-    institution: "Chandpur Science and Technology University",
-    badge: "Advisor",
-    bio: "Sohel Rana is the Chairman of the Department of Information and Communication Technology at CSTU. Serving as an Advisor for CSTU CPC, he supports student technology initiatives, hackathons, and skill-building programs.",
-    email: "sohel@ict.cstu.ac.bd",
-  },
-];
+import { UserCheck, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function AdvisorPage() {
   const [selectedAdvisor, setSelectedAdvisor] = useState(null);
+  const [advisors, setAdvisors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadAdvisors() {
+      try {
+        const response = await fetch("/api/public/advisors", { cache: "no-store" });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || "Unable to load advisors.");
+        }
+        setAdvisors(result.data || []);
+      } catch (loadError) {
+        console.error("Advisor load failed:", loadError);
+        setError("Unable to load advisors. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadAdvisors();
+  }, []);
 
   return (
     <>
@@ -58,48 +44,54 @@ export default function AdvisorPage() {
           </p>
         </div>
 
-        {/* Advisor Grid matching static card data */}
-        <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
-          {staticAdvisors.map((advisor) => (
-            <div
-              key={advisor.id}
-              className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-200 shadow-sm hover:shadow-md group relative overflow-hidden"
+        {loading ? (
+          <p className="py-12 text-center text-slate-500">Loading advisors...</p>
+        ) : error ? (
+          <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</p>
+        ) : advisors.length === 0 ? (
+          <p className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">No advisors have been published yet.</p>
+        ) : <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+          {advisors.map((advisor) => (
+            <article
+              key={advisor._id}
+              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5"
             >
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-2">
-                  {advisor.name}
-                </h2>
-
-                <p className="text-sm font-medium text-indigo-700 mb-1">
-                  {advisor.title}
-                </p>
-
-                <p className="text-sm text-slate-600 font-normal">
-                  {advisor.designation}
-                </p>
-
-                {advisor.department && (
-                  <p className="text-sm text-slate-600 mt-0.5 leading-relaxed">
-                    {advisor.department}
-                  </p>
+              <div className="aspect-[4/5] overflow-hidden rounded-xl border border-slate-200 bg-slate-100 p-1">
+                {advisor.avatarUrl ? (
+                  <img
+                    src={advisor.avatarUrl}
+                    alt={advisor.name}
+                    className="h-full w-full rounded-lg object-cover object-[center_25%]"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center rounded-lg bg-slate-100 text-4xl font-semibold text-indigo-700">
+                    {advisor.name
+                      .split(/\s+/)
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((part) => part[0])
+                      .join("")
+                      .toUpperCase()}
+                  </div>
                 )}
-
-                <p className="text-sm text-slate-600 mt-0.5 leading-relaxed">
-                  {advisor.institution}
-                </p>
               </div>
-
-              <div className="mt-8 pt-4">
+              <div className="px-1 pt-4 text-center">
+                <h2 className="text-base font-bold text-slate-900">{advisor.name}</h2>
+                <p className="mt-1 text-sm font-medium text-indigo-700">
+                  {advisor.designation || advisor.title}
+                </p>
                 <button
+                  type="button"
                   onClick={() => setSelectedAdvisor(advisor)}
-                  className="px-5 py-2.5 rounded-lg bg-[#1b365d] hover:bg-[#122544] text-white text-xs sm:text-sm font-semibold transition-all duration-200 shadow-sm flex items-center gap-2 active:scale-95"
+                  className="mt-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-slate-800 transition-colors hover:border-indigo-600 hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 >
-                  <span>View Profile</span>
+                  View Profile
                 </button>
               </div>
-            </div>
+            </article>
           ))}
         </div>
+        }
       </main>
 
       {/* Profile Detail Modal */}
@@ -117,12 +109,18 @@ export default function AdvisorPage() {
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600">
-                <UserCheck className="w-6 h-6" />
+              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                {selectedAdvisor.avatarUrl ? (
+                  <img src={selectedAdvisor.avatarUrl} alt="" className="h-full w-full object-cover object-[center_25%]" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-indigo-50 text-indigo-600">
+                    <UserCheck className="h-6 w-6" />
+                  </div>
+                )}
               </div>
               <div>
                 <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">
-                  {selectedAdvisor.badge}
+                  {selectedAdvisor.title}
                 </span>
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900">{selectedAdvisor.name}</h3>
               </div>

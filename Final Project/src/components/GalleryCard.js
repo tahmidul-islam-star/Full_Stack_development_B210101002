@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Maximize2, Sparkles, Image as ImageIcon, Calendar } from "lucide-react";
 
 export default function GalleryCard({ item, onOpenModal }) {
-  const [imgSrc, setImgSrc] = useState(item.img);
+  const [imgSrc, setImgSrc] = useState(item.img || "");
   const [imgError, setImgError] = useState(false);
 
   const handleImageError = () => {

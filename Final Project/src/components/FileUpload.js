@@ -1,21 +1,52 @@
 "use client";
 
-import { useState } from "react";
-import { Upload, X, Check, Image as ImageIcon, Loader2 } from "lucide-react";
+import { useId, useRef, useState } from "react";
+import { FileText, Loader2, Upload, X } from "lucide-react";
 
-export default function FileUpload({ onUploadComplete, value, label = "Upload Image" }) {
+const imageTypes = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/avif",
+]);
+
+export default function FileUpload({
+  onUploadComplete,
+  value,
+  label = "Upload Image",
+  accept = "image/jpeg,image/png,image/webp,image/gif,image/avif",
+}) {
   const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState(value || "");
   const [error, setError] = useState("");
+  const inputId = useId();
+  const inputRef = useRef(null);
+  const acceptsPdf = accept.split(",").some((type) => type.trim() === "application/pdf");
+  const previewIsPdf = value?.split(/[?#]/, 1)[0].toLowerCase().endsWith(".pdf");
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
-      setUploading(true);
       setError("");
+      const acceptedByInput = accept
+        .split(",")
+        .some((type) => type.trim() === file.type || (type.trim() === "image/*" && imageTypes.has(file.type)));
+      if (!acceptedByInput || !(imageTypes.has(file.type) || (acceptsPdf && file.type === "application/pdf"))) {
+        throw new Error(acceptsPdf
+          ? "Choose a JPG, PNG, WEBP, GIF, AVIF, or PDF file."
+          : "Choose a JPG, PNG, WEBP, GIF, or AVIF image.");
+      }
 
+      const maxFileSize = file.type === "application/pdf" ? 15 * 1024 * 1024 : 10 * 1024 * 1024;
+      if (file.size <= 0 || file.size > maxFileSize) {
+        throw new Error(file.type === "application/pdf"
+          ? "PDF files must be smaller than 15 MB."
+          : "Images must be smaller than 10 MB.");
+      }
+
+      setUploading(true);
       const formData = new FormData();
       formData.append("file", file);
 
@@ -25,60 +56,95 @@ export default function FileUpload({ onUploadComplete, value, label = "Upload Im
       });
 
       const data = await res.json();
-      if (data.success) {
-        setPreview(data.url);
+      if (res.ok && data.success) {
         onUploadComplete(data.url);
       } else {
-        setError(data.error || "Upload failed");
+        throw new Error(data.error || "Upload failed.");
       }
     } catch (err) {
       console.error("Upload error:", err);
-      setError("Failed to upload file");
+      setError(err.message || "Failed to upload file.");
     } finally {
       setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
     }
   };
 
   const handleRemove = () => {
-    setPreview("");
+    setError("");
     onUploadComplete("");
   };
 
   return (
     <div className="space-y-2">
-      <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">
+      <span className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">
         {label}
-      </label>
+      </span>
 
-      {preview ? (
-        <div className="relative w-full h-40 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden group">
-          <img src={preview} alt="Uploaded preview" className="w-full h-full object-cover" />
-          <button
-            type="button"
-            onClick={handleRemove}
-            className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors shadow-sm"
-          >
-            <X className="w-4 h-4" />
-          </button>
+      {value ? (
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+          {previewIsPdf ? (
+            <a
+              href={value}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-40 items-center justify-center gap-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"
+            >
+              <FileText className="h-8 w-8" />
+              View uploaded PDF
+            </a>
+          ) : (
+            <img src={value} alt="Uploaded file preview" className="h-40 w-full object-cover" />
+          )}
+          <div className="flex items-center justify-between gap-3 border-t border-slate-200 bg-white p-3">
+            <label
+              htmlFor={inputId}
+              className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 ${uploading ? "pointer-events-none opacity-60" : ""}`}
+            >
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {uploading ? "Uploading…" : "Replace file"}
+            </label>
+            <button
+              type="button"
+              onClick={handleRemove}
+              disabled={uploading}
+              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+            >
+              <X className="h-4 w-4" />
+              Remove
+            </button>
+          </div>
         </div>
       ) : (
-        <label className="flex flex-col items-center justify-center w-full h-36 rounded-xl border-2 border-dashed border-slate-300 hover:border-indigo-500 bg-slate-50 hover:bg-white cursor-pointer transition-all">
-          <div className="flex flex-col items-center justify-center pt-5 pb-6">
-            {uploading ? (
-              <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-            ) : (
-              <>
-                <Upload className="w-7 h-7 text-slate-400 mb-2 group-hover:text-indigo-600" />
-                <p className="text-xs text-slate-600">
-                  <span className="font-semibold text-indigo-600">Click to upload</span> or drag and drop
-                </p>
-                <p className="text-[10px] text-slate-400 mt-1">PNG, JPG, JPEG, WEBP</p>
-              </>
-            )}
-          </div>
-          <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+        <label
+          htmlFor={inputId}
+          className={`flex h-36 flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 transition-all ${uploading ? "cursor-wait" : "cursor-pointer hover:border-indigo-500 hover:bg-white"}`}
+        >
+          {uploading ? (
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+          ) : (
+            <>
+              <Upload className="mb-2 h-7 w-7 text-slate-400" />
+              <p className="text-xs text-slate-600">
+                <span className="font-semibold text-indigo-600">Click to upload</span>
+              </p>
+              <p className="mt-1 text-[10px] text-slate-400">
+                {acceptsPdf ? "JPG, PNG, WEBP, GIF, AVIF, or PDF" : "JPG, PNG, WEBP, GIF, or AVIF"}
+              </p>
+            </>
+          )}
         </label>
       )}
+
+      <input
+        ref={inputRef}
+        id={inputId}
+        type="file"
+        accept={accept}
+        disabled={uploading}
+        onChange={handleFileChange}
+        className="sr-only"
+      />
 
       {error && <p className="text-xs text-rose-600 font-medium">{error}</p>}
     </div>

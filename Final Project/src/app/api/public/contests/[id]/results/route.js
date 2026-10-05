@@ -1,11 +1,30 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import connectToDatabase from "@/lib/db";
+import Contest from "@/models/Contest";
 import ContestResult from "@/models/ContestResult";
 
 export async function GET(req, { params }) {
   try {
-    await connectToDatabase();
     const { id } = await params;
+    if (!mongoose.isValidObjectId(id)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid contest ID." },
+        { status: 400 }
+      );
+    }
+
+    await connectToDatabase();
+    const contest = await Contest.findOne({
+      _id: id,
+      isPublished: { $ne: false },
+    }).select("_id");
+    if (!contest) {
+      return NextResponse.json(
+        { success: false, error: "Contest not found." },
+        { status: 404 }
+      );
+    }
 
     const results = await ContestResult.find({ contest: id })
       .populate("user", "name email studentId department avatarUrl codeforcesHandle")

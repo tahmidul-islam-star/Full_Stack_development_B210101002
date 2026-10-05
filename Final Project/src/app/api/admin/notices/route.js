@@ -46,11 +46,28 @@ export async function POST(req) {
     await connectToDatabase();
     const body = await req.json();
 
-    const { title, content, category, isPinned, attachmentUrl } = body;
+    const {
+      title,
+      content,
+      category,
+      isPinned,
+      isPublished,
+      noticeDate,
+      attachmentUrl,
+      externalLink,
+    } = body;
 
     if (!title || !content) {
       return NextResponse.json(
         { success: false, error: "Title and content are required." },
+        { status: 400 }
+      );
+    }
+
+    const parsedNoticeDate = noticeDate ? new Date(noticeDate) : undefined;
+    if (parsedNoticeDate && Number.isNaN(parsedNoticeDate.getTime())) {
+      return NextResponse.json(
+        { success: false, error: "Notice date is invalid." },
         { status: 400 }
       );
     }
@@ -60,7 +77,10 @@ export async function POST(req) {
       content,
       category: category || "ANNOUNCEMENT",
       isPinned: Boolean(isPinned),
+      isPublished: isPublished !== false,
+      noticeDate: parsedNoticeDate,
       attachmentUrl: attachmentUrl || "",
+      externalLink: externalLink || "",
       author: userId,
     });
 

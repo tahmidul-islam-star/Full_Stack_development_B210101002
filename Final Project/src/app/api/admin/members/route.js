@@ -66,7 +66,25 @@ export async function POST(req) {
     await connectToDatabase();
     const body = await req.json();
 
-    const { email, password, name, role, memberClass, studentId, department, session: userSession, designation, phone, avatarUrl, codeforcesHandle, vjudgeHandle, githubUrl } = body;
+    const {
+      email,
+      password,
+      name,
+      role,
+      memberClass,
+      studentId,
+      department,
+      session: userSession,
+      designation,
+      bio,
+      displayOrder,
+      isProfileVisible,
+      phone,
+      avatarUrl,
+      codeforcesHandle,
+      vjudgeHandle,
+      githubUrl,
+    } = body;
 
     if (!email || !password || !name) {
       return NextResponse.json(
@@ -95,6 +113,9 @@ export async function POST(req) {
       department: department || "Computer Science & Engineering",
       session: userSession || "2022-23",
       designation: designation || "Member",
+      bio: bio || "",
+      displayOrder: Number.isFinite(Number(displayOrder)) ? Number(displayOrder) : 0,
+      isProfileVisible: isProfileVisible !== false,
       phone: phone || "",
       avatarUrl: avatarUrl || "",
       codeforcesHandle: codeforcesHandle || "",

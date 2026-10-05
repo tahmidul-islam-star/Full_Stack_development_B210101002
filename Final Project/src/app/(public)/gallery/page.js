@@ -1,15 +1,43 @@
 "use client";
 
-import { useState } from "react";
-import Navbar from "@/components/Navbar";
+import { useEffect, useState } from "react";
 import GalleryCard from "@/components/GalleryCard";
-import galleryData from "@/data/gallery.json";
-import { Sparkles, Camera, X, Image as ImageIcon, ExternalLink, Trophy, Calendar } from "lucide-react";
+import { Sparkles, Camera, X, Trophy } from "lucide-react";
 import Link from "next/link";
 
 export default function GalleryPage() {
+  const [galleryData, setGalleryData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [selectedItem, setSelectedItem] = useState(null);
   const [activeImgSrc, setActiveImgSrc] = useState("");
+
+  useEffect(() => {
+    async function loadGallery() {
+      try {
+        const response = await fetch("/api/public/gallery", { cache: "no-store" });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || "Unable to load gallery.");
+        }
+        setGalleryData(
+          result.data.map((item) => ({
+            ...item,
+            id: item._id,
+            img: item.imageUrl,
+            description: item.caption || item.description || "",
+          }))
+        );
+      } catch (loadError) {
+        console.error("Gallery load failed:", loadError);
+        setError("Unable to load the gallery. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadGallery();
+  }, []);
 
   const handleOpenModal = (item, imgSrc) => {
     setSelectedItem(item);
@@ -37,9 +65,17 @@ export default function GalleryPage() {
 
         {/* Gallery Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-2 gap-8">
-          {galleryData.map((item, index) => (
-            <GalleryCard key={index} item={item} onOpenModal={handleOpenModal} />
-          ))}
+          {loading ? (
+            <div className="sm:col-span-2 rounded-2xl border border-slate-200 bg-white p-12 text-center text-slate-500">Loading gallery...</div>
+          ) : error ? (
+            <div role="alert" className="sm:col-span-2 rounded-2xl border border-rose-200 bg-rose-50 p-8 text-center text-rose-700">{error}</div>
+          ) : galleryData.length ? (
+            galleryData.map((item) => (
+              <GalleryCard key={item.id} item={item} onOpenModal={handleOpenModal} />
+            ))
+          ) : (
+            <div className="sm:col-span-2 rounded-2xl border border-slate-200 bg-white p-12 text-center text-slate-500">No gallery images have been published yet.</div>
+          )}
         </div>
       </main>
 
@@ -76,9 +112,11 @@ export default function GalleryPage() {
             {/* Detailed Description Content */}
             <div className="p-6 sm:p-8 space-y-4 overflow-y-auto flex-1">
               <h3 className="font-bold text-base text-slate-900">Event Overview & Highlights</h3>
-              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
-                {selectedItem.description}
-              </p>
+              {selectedItem.description && (
+                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                  {selectedItem.description}
+                </p>
+              )}
 
               <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                 <Link
@@ -101,12 +139,6 @@ export default function GalleryPage() {
         </div>
       )}
 
-      <footer className="py-8 border-t border-slate-200 text-center text-xs text-slate-500 bg-white">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© 2026 CSTU Computer & Programming Club | All Rights Reserved</p>
-          <p className="text-slate-600 font-medium">Chandpur Science and Technology University</p>
-        </div>
-      </footer>
     </>
   );
 }

@@ -20,6 +20,9 @@ import {
   ArrowLeft,
   Menu,
   X,
+  Camera,
+  GraduationCap,
+  Settings,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -35,6 +38,9 @@ export default function Sidebar() {
     { href: "/admin/notices", label: "Notice Board", icon: Bell },
     { href: "/admin/events", label: "Event Management", icon: Calendar },
     { href: "/admin/contests", label: "Contests & Standings", icon: Trophy },
+    { href: "/admin/advisors", label: "Advisor Management", icon: GraduationCap },
+    { href: "/admin/gallery", label: "Gallery Management", icon: Camera },
+    { href: "/admin/site-settings", label: "Site Settings", icon: Settings },
   ];
 
   const memberNav = [
@@ -229,4 +235,3 @@ export default function Sidebar() {
     </>
   );
 }
-

@@ -36,7 +36,18 @@ export async function POST(req) {
     await connectToDatabase();
     const body = await req.json();
 
-    const { title, description, venue, eventDate, coverImage, registrationLink, isActive } = body;
+    const {
+      title,
+      description,
+      venue,
+      eventDate,
+      coverImage,
+      registrationLink,
+      status,
+      isActive,
+      isPublished,
+      isFeatured,
+    } = body;
 
     if (!title || !description || !venue || !eventDate) {
       return NextResponse.json(
@@ -45,14 +56,25 @@ export async function POST(req) {
       );
     }
 
+    const parsedEventDate = new Date(eventDate);
+    if (Number.isNaN(parsedEventDate.getTime())) {
+      return NextResponse.json(
+        { success: false, error: "Event date is invalid." },
+        { status: 400 }
+      );
+    }
+
     const event = await Event.create({
       title,
       description,
       venue,
-      eventDate: new Date(eventDate),
+      eventDate: parsedEventDate,
       coverImage: coverImage || "",
       registrationLink: registrationLink || "",
+      status: status || "UPCOMING",
       isActive: isActive !== undefined ? Boolean(isActive) : true,
+      isPublished: isPublished !== false,
+      isFeatured: Boolean(isFeatured),
     });
 
     return NextResponse.json({ success: true, data: event }, { status: 201 });

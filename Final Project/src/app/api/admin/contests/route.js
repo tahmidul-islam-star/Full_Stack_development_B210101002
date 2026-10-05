@@ -36,11 +36,38 @@ export async function POST(req) {
     await connectToDatabase();
     const body = await req.json();
 
-    const { title, description, platform, contestUrl, contestDate, registrationDeadline, status } = body;
+    const {
+      title,
+      description,
+      platform,
+      contestUrl,
+      registrationLink,
+      resultLink,
+      contestDate,
+      registrationDeadline,
+      status,
+      isPublished,
+      isFeatured,
+    } = body;
 
     if (!title || !contestDate) {
       return NextResponse.json(
         { success: false, error: "Title and contest date are required." },
+        { status: 400 }
+      );
+    }
+
+    const parsedContestDate = new Date(contestDate);
+    const parsedRegistrationDeadline = registrationDeadline
+      ? new Date(registrationDeadline)
+      : undefined;
+    if (
+      Number.isNaN(parsedContestDate.getTime()) ||
+      (parsedRegistrationDeadline &&
+        Number.isNaN(parsedRegistrationDeadline.getTime()))
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Contest date or registration deadline is invalid." },
         { status: 400 }
       );
     }
@@ -50,9 +77,13 @@ export async function POST(req) {
       description: description || "",
       platform: platform || "VJudge",
       contestUrl: contestUrl || "",
-      contestDate: new Date(contestDate),
-      registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : undefined,
+      registrationLink: registrationLink || "",
+      resultLink: resultLink || "",
+      contestDate: parsedContestDate,
+      registrationDeadline: parsedRegistrationDeadline,
       status: status || "UPCOMING",
+      isPublished: isPublished !== false,
+      isFeatured: Boolean(isFeatured),
     });
 
     return NextResponse.json({ success: true, data: contest }, { status: 201 });

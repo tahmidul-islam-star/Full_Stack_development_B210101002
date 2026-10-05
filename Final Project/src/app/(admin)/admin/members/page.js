@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
 import FileUpload from "@/components/FileUpload";
-import { Users, Plus, Search, ShieldCheck, CheckCircle2, XCircle, Trash2, Edit2, X, Globe, FileSpreadsheet, ExternalLink } from "lucide-react";
+import { Users, Plus, Search, ShieldCheck, CheckCircle2, XCircle, Trash2, Edit2, X, FileSpreadsheet, ExternalLink } from "lucide-react";
 import { getMemberClassLabel } from "@/lib/memberClasses";
 
 export default function AdminMembersPage() {
@@ -13,6 +11,7 @@ export default function AdminMembersPage() {
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
+  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -24,6 +23,9 @@ export default function AdminMembersPage() {
     session: "2022-23",
     designation: "Member",
     memberClass: "MEMBER",
+    bio: "",
+    displayOrder: 0,
+    isProfileVisible: true,
     role: "MEMBER",
     phone: "",
     avatarUrl: "",
@@ -35,19 +37,39 @@ export default function AdminMembersPage() {
 
   const fetchMembers = async () => {
     try {
-      setLoading(true);
       const res = await fetch("/api/admin/members");
       const json = await res.json();
-      if (json.success) setMembers(json.data || []);
+      if (!res.ok || !json.success) throw new Error(json.error || "Unable to load members.");
+      setMembers(json.data || []);
     } catch (err) {
       console.error(err);
+      setError(err.message || "Unable to load members.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchMembers();
+    let active = true;
+    fetch("/api/admin/members", { cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || "Unable to load members.");
+        }
+        if (active) setMembers(result.data || []);
+      })
+      .catch((fetchError) => {
+        console.error("Member management load error:", fetchError);
+        if (active) setError(fetchError.message || "Unable to load members.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleOpenCreateModal = () => {
@@ -62,6 +84,9 @@ export default function AdminMembersPage() {
       session: "2022-23",
       designation: "Member",
       memberClass: "MEMBER",
+      bio: "",
+      displayOrder: 0,
+      isProfileVisible: true,
       role: "MEMBER",
       phone: "",
       avatarUrl: "",
@@ -84,6 +109,9 @@ export default function AdminMembersPage() {
       session: member.session || "",
       designation: member.designation || "Member",
       memberClass: member.memberClass || "MEMBER",
+      bio: member.bio || "",
+      displayOrder: member.displayOrder || 0,
+      isProfileVisible: member.isProfileVisible !== false,
       role: member.role || "MEMBER",
       phone: member.phone || "",
       avatarUrl: member.avatarUrl || "",
@@ -109,6 +137,7 @@ export default function AdminMembersPage() {
     }
 
     setSubmitting(true);
+    setError("");
 
     try {
       const url = editingMember ? `/api/admin/members/${editingMember._id}` : "/api/admin/members";
@@ -120,12 +149,14 @@ export default function AdminMembersPage() {
         body: JSON.stringify(formData),
       });
 
-      if (res.ok) {
-        setModalOpen(false);
-        fetchMembers();
-      }
+      const result = await res.json();
+      if (!res.ok || !result.success) throw new Error(result.error || "Unable to save member.");
+      setModalOpen(false);
+      fetchMembers();
+      if (result.warning) setError(result.warning);
     } catch (err) {
       console.error(err);
+      setError(err.message || "Unable to save member.");
     } finally {
       setSubmitting(false);
     }
@@ -138,9 +169,13 @@ export default function AdminMembersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
-      if (res.ok) fetchMembers();
+      const result = await res.json();
+      if (!res.ok || !result.success) throw new Error(result.error || "Unable to update member status.");
+      fetchMembers();
+      if (result.warning) setError(result.warning);
     } catch (err) {
       console.error(err);
+      setError(err.message || "Unable to update member status.");
     }
   };
 
@@ -148,9 +183,13 @@ export default function AdminMembersPage() {
     if (!confirm("Are you sure you want to remove this member?")) return;
     try {
       const res = await fetch(`/api/admin/members/${id}`, { method: "DELETE" });
-      if (res.ok) fetchMembers();
+      const result = await res.json();
+      if (!res.ok || !result.success) throw new Error(result.error || "Unable to delete member.");
+      fetchMembers();
+      if (result.warning) setError(result.warning);
     } catch (err) {
       console.error(err);
+      setError(err.message || "Unable to delete member.");
     }
   };
 
@@ -194,6 +233,8 @@ export default function AdminMembersPage() {
               </button>
             </div>
           </div>
+
+          {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</p>}
 
           {/* Search bar */}
           <div className="relative max-w-md">
@@ -340,6 +381,7 @@ export default function AdminMembersPage() {
                 {editingMember ? `Edit Member: ${editingMember.name}` : "Add New Club Member"}
               </h2>
             </div>
+            {error && <p role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -364,6 +406,37 @@ export default function AdminMembersPage() {
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 outline-none focus:border-indigo-600 focus:bg-white"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Profile bio</label>
+                <textarea
+                  rows={3}
+                  value={formData.bio}
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 outline-none focus:border-indigo-600 focus:bg-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label className="block text-xs font-semibold text-slate-600 uppercase">
+                  Display order
+                  <input
+                    type="number"
+                    value={formData.displayOrder}
+                    onChange={(e) => setFormData({ ...formData, displayOrder: Number(e.target.value) })}
+                    className="mt-1 w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 outline-none focus:border-indigo-600 focus:bg-white"
+                  />
+                </label>
+                <label className="flex items-center gap-2 self-end pb-3 text-xs font-medium text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={formData.isProfileVisible}
+                    onChange={(e) => setFormData({ ...formData, isProfileVisible: e.target.checked })}
+                    className="h-4 w-4 rounded text-indigo-600"
+                  />
+                  Show profile in public directory
+                </label>
               </div>
 
               {!editingMember && (

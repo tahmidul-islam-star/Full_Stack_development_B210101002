@@ -16,6 +16,12 @@ export const r2Client = new S3Client({
 });
 
 export async function uploadToR2(buffer, fileName, contentType) {
+  if (!accountId || !accessKeyId || !secretAccessKey || !publicUrl) {
+    throw new Error(
+      "Cloudflare R2 account credentials and R2_PUBLIC_URL must be configured before uploading files."
+    );
+  }
+
   const key = `uploads/${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
 
   const command = new PutObjectCommand({
@@ -26,36 +32,34 @@ export async function uploadToR2(buffer, fileName, contentType) {
   });
 
   await r2Client.send(command);
-
-  // Return public URL or fallback path
-  if (publicUrl) {
-    return `${publicUrl.replace(/\/$/, "")}/${key}`;
-  }
-  return `/api/files/${key}`;
+  return `${publicUrl.replace(/\/$/, "")}/${key}`;
 }
 
 export async function deleteFromR2(fileUrl) {
-  if (!fileUrl) return;
+  const publicBaseUrl = publicUrl.replace(/\/$/, "");
+  const objectPrefix = `${publicBaseUrl}/uploads/`;
+  if (!fileUrl || !publicBaseUrl || !fileUrl.startsWith(objectPrefix)) return false;
 
+  const key = fileUrl.slice(publicBaseUrl.length + 1).split(/[?#]/, 1)[0];
+  if (!key || key.includes("..")) {
+    throw new Error("Invalid Cloudflare R2 object URL.");
+  }
+
+  await r2Client.send(
+    new DeleteObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+    })
+  );
+  return true;
+}
+
+export async function cleanupR2Upload(fileUrl) {
   try {
-    let key = "";
-    if (publicUrl && fileUrl.startsWith(publicUrl)) {
-      key = fileUrl.replace(`${publicUrl.replace(/\/$/, "")}/`, "");
-    } else {
-      const parts = fileUrl.split("/uploads/");
-      if (parts.length > 1) {
-        key = `uploads/${parts[1]}`;
-      }
-    }
-
-    if (key) {
-      const command = new DeleteObjectCommand({
-        Bucket: bucketName,
-        Key: key,
-      });
-      await r2Client.send(command);
-    }
+    await deleteFromR2(fileUrl);
+    return null;
   } catch (error) {
-    console.error("Error deleting file from Cloudflare R2:", error);
+    console.error("Cloudflare R2 upload cleanup failed:", error);
+    return "The content was saved, but its previous uploaded file could not be removed from storage.";
   }
 }

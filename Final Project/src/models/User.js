@@ -47,6 +47,18 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: "Member",
     },
+    bio: {
+      type: String,
+      default: "",
+    },
+    displayOrder: {
+      type: Number,
+      default: 0,
+    },
+    isProfileVisible: {
+      type: Boolean,
+      default: true,
+    },
     avatarUrl: {
       type: String,
       default: "",

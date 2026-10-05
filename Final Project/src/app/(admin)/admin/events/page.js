@@ -1,16 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
 import FileUpload from "@/components/FileUpload";
 import { Calendar, Plus, MapPin, ExternalLink, Trash2, Edit2, X } from "lucide-react";
+
+function toLocalDateTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return localDate.toISOString().slice(0, 16);
+}
 
 export default function AdminEventsPage() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
+  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -19,29 +26,52 @@ export default function AdminEventsPage() {
     eventDate: "",
     coverImage: "",
     registrationLink: "",
+    status: "UPCOMING",
+    isPublished: true,
+    isFeatured: false,
   });
   const [submitting, setSubmitting] = useState(false);
 
   const fetchEvents = async () => {
     try {
-      setLoading(true);
       const res = await fetch("/api/admin/events");
       const json = await res.json();
-      if (json.success) setEvents(json.data || []);
+      if (!res.ok || !json.success) throw new Error(json.error || "Unable to load events.");
+      setEvents(json.data || []);
     } catch (err) {
       console.error(err);
+      setError(err.message || "Unable to load events.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchEvents();
+    let active = true;
+    fetch("/api/admin/events", { cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || "Unable to load events.");
+        }
+        if (active) setEvents(result.data || []);
+      })
+      .catch((fetchError) => {
+        console.error("Event management load error:", fetchError);
+        if (active) setError(fetchError.message || "Unable to load events.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleOpenCreateModal = () => {
     setEditingEvent(null);
-    setFormData({ title: "", description: "", venue: "", eventDate: "", coverImage: "", registrationLink: "" });
+    setFormData({ title: "", description: "", venue: "", eventDate: "", coverImage: "", registrationLink: "", status: "UPCOMING", isPublished: true, isFeatured: false });
     setModalOpen(true);
   };
 
@@ -51,9 +81,12 @@ export default function AdminEventsPage() {
       title: evt.title || "",
       description: evt.description || "",
       venue: evt.venue || "",
-      eventDate: evt.eventDate ? new Date(evt.eventDate).toISOString().split("T")[0] : "",
+      eventDate: toLocalDateTime(evt.eventDate),
       coverImage: evt.coverImage || "",
       registrationLink: evt.registrationLink || "",
+      status: evt.status || "UPCOMING",
+      isPublished: evt.isPublished !== false,
+      isFeatured: Boolean(evt.isFeatured),
     });
     setModalOpen(true);
   };
@@ -61,6 +94,7 @@ export default function AdminEventsPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setError("");
 
     try {
       const url = editingEvent ? `/api/admin/events/${editingEvent._id}` : "/api/admin/events";
@@ -72,13 +106,15 @@ export default function AdminEventsPage() {
         body: JSON.stringify(formData),
       });
 
-      if (res.ok) {
-        setModalOpen(false);
-        setFormData({ title: "", description: "", venue: "", eventDate: "", coverImage: "", registrationLink: "" });
-        fetchEvents();
-      }
+      const result = await res.json();
+      if (!res.ok || !result.success) throw new Error(result.error || "Unable to save event.");
+      setModalOpen(false);
+      setFormData({ title: "", description: "", venue: "", eventDate: "", coverImage: "", registrationLink: "", status: "UPCOMING", isPublished: true, isFeatured: false });
+      fetchEvents();
+      if (result.warning) setError(result.warning);
     } catch (err) {
       console.error(err);
+      setError(err.message || "Unable to save event.");
     } finally {
       setSubmitting(false);
     }
@@ -88,9 +124,13 @@ export default function AdminEventsPage() {
     if (!confirm("Delete this event?")) return;
     try {
       const res = await fetch(`/api/admin/events/${id}`, { method: "DELETE" });
-      if (res.ok) fetchEvents();
+      const result = await res.json();
+      if (!res.ok || !result.success) throw new Error(result.error || "Unable to delete event.");
+      fetchEvents();
+      if (result.warning) setError(result.warning);
     } catch (err) {
       console.error(err);
+      setError(err.message || "Unable to delete event.");
     }
   };
 
@@ -113,6 +153,8 @@ export default function AdminEventsPage() {
               <span>Create New Event</span>
             </button>
           </div>
+
+          {error && <p role="alert" className="mb-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</p>}
 
           {/* Events Grid */}
           <div className="grid md:grid-cols-2 gap-6">
@@ -140,6 +182,11 @@ export default function AdminEventsPage() {
                         {new Date(evt.eventDate).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
                       </p>
                       <h3 className="font-bold text-lg text-slate-900 mb-2">{evt.title}</h3>
+                      <div className="mb-2 flex flex-wrap gap-2 text-[11px] font-semibold">
+                        <span className={evt.isPublished === false ? "text-slate-500" : "text-emerald-700"}>{evt.isPublished === false ? "Hidden" : "Published"}</span>
+                        {evt.isFeatured && <span className="text-amber-700">Featured</span>}
+                        <span className="text-indigo-700">{evt.status || "UPCOMING"}</span>
+                      </div>
                       <p className="text-sm text-slate-600 leading-relaxed line-clamp-3">{evt.description}</p>
                     </div>
                   </div>
@@ -186,6 +233,7 @@ export default function AdminEventsPage() {
             <h2 className="text-2xl font-bold text-slate-900 mb-6">
               {editingEvent ? "Edit Event Details" : "Create New Event"}
             </h2>
+            {error && <p role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -214,7 +262,7 @@ export default function AdminEventsPage() {
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Event Date</label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     required
                     value={formData.eventDate}
                     onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
@@ -243,6 +291,24 @@ export default function AdminEventsPage() {
                   className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 outline-none focus:border-indigo-600 focus:bg-white"
                   placeholder="https://..."
                 />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label className="block text-xs font-semibold text-slate-600 uppercase">Status
+                  <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="mt-1 w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5 text-sm text-slate-900">
+                    <option value="UPCOMING">Upcoming</option>
+                    <option value="ONGOING">Ongoing</option>
+                    <option value="COMPLETED">Completed</option>
+                  </select>
+                </label>
+                <label className="flex items-center gap-2 self-end pb-3 text-xs font-medium text-slate-700">
+                  <input type="checkbox" checked={formData.isPublished} onChange={(e) => setFormData({ ...formData, isPublished: e.target.checked })} className="h-4 w-4 rounded text-indigo-600" />
+                  Published
+                </label>
+                <label className="flex items-center gap-2 self-end pb-3 text-xs font-medium text-slate-700">
+                  <input type="checkbox" checked={formData.isFeatured} onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })} className="h-4 w-4 rounded text-indigo-600" />
+                  Featured
+                </label>
               </div>
 
               <FileUpload

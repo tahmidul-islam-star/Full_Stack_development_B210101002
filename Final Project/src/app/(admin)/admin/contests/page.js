@@ -1,15 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
 import { Trophy, Plus, CheckCircle2, XCircle, Clock, Trash2, Edit2, X, ExternalLink, ShieldCheck, UserCheck } from "lucide-react";
+
+function toLocalDateTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return localDate.toISOString().slice(0, 16);
+}
 
 export default function AdminContestsPage() {
   const [contests, setContests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingContest, setEditingContest] = useState(null);
+  const [error, setError] = useState("");
 
   // Application / Result modal states
   const [selectedContest, setSelectedContest] = useState(null);
@@ -30,17 +37,22 @@ export default function AdminContestsPage() {
     contestDate: "",
     registrationDeadline: "",
     status: "UPCOMING",
+    registrationLink: "",
+    resultLink: "",
+    isPublished: true,
+    isFeatured: false,
   });
   const [submitting, setSubmitting] = useState(false);
 
   const fetchContests = async () => {
     try {
-      setLoading(true);
       const res = await fetch("/api/admin/contests");
       const json = await res.json();
-      if (json.success) setContests(json.data || []);
+      if (!res.ok || !json.success) throw new Error(json.error || "Unable to load contests.");
+      setContests(json.data || []);
     } catch (err) {
       console.error(err);
+      setError(err.message || "Unable to load contests.");
     } finally {
       setLoading(false);
     }
@@ -73,8 +85,38 @@ export default function AdminContestsPage() {
   };
 
   useEffect(() => {
-    fetchContests();
-    fetchMembers();
+    let active = true;
+    Promise.all([
+      fetch("/api/admin/contests", { cache: "no-store" }),
+      fetch("/api/admin/members", { cache: "no-store" }),
+    ])
+      .then(async ([contestResponse, memberResponse]) => {
+        const [contestResult, memberResult] = await Promise.all([
+          contestResponse.json(),
+          memberResponse.json(),
+        ]);
+        if (!contestResponse.ok || !contestResult.success) {
+          throw new Error(contestResult.error || "Unable to load contests.");
+        }
+        if (!memberResponse.ok || !memberResult.success) {
+          throw new Error(memberResult.error || "Unable to load members.");
+        }
+        if (active) {
+          setContests(contestResult.data || []);
+          setMembers(memberResult.data || []);
+        }
+      })
+      .catch((fetchError) => {
+        console.error("Contest management load error:", fetchError);
+        if (active) setError(fetchError.message || "Unable to load contest data.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleOpenCreateModal = () => {
@@ -87,6 +129,10 @@ export default function AdminContestsPage() {
       contestDate: "",
       registrationDeadline: "",
       status: "UPCOMING",
+      registrationLink: "",
+      resultLink: "",
+      isPublished: true,
+      isFeatured: false,
     });
     setModalOpen(true);
   };
@@ -98,9 +144,13 @@ export default function AdminContestsPage() {
       description: c.description || "",
       platform: c.platform || "VJudge",
       contestUrl: c.contestUrl || "",
-      contestDate: c.contestDate ? new Date(c.contestDate).toISOString().split("T")[0] : "",
-      registrationDeadline: c.registrationDeadline ? new Date(c.registrationDeadline).toISOString().split("T")[0] : "",
+      contestDate: toLocalDateTime(c.contestDate),
+      registrationDeadline: toLocalDateTime(c.registrationDeadline),
       status: c.status || "UPCOMING",
+      registrationLink: c.registrationLink || "",
+      resultLink: c.resultLink || "",
+      isPublished: c.isPublished !== false,
+      isFeatured: Boolean(c.isFeatured),
     });
     setModalOpen(true);
   };
@@ -108,6 +158,7 @@ export default function AdminContestsPage() {
   const handleSubmitContest = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setError("");
 
     try {
       const url = editingContest ? `/api/admin/contests/${editingContest._id}` : "/api/admin/contests";
@@ -119,12 +170,13 @@ export default function AdminContestsPage() {
         body: JSON.stringify(formData),
       });
 
-      if (res.ok) {
-        setModalOpen(false);
-        fetchContests();
-      }
+      const result = await res.json();
+      if (!res.ok || !result.success) throw new Error(result.error || "Unable to save contest.");
+      setModalOpen(false);
+      fetchContests();
     } catch (err) {
       console.error(err);
+      setError(err.message || "Unable to save contest.");
     } finally {
       setSubmitting(false);
     }
@@ -134,9 +186,12 @@ export default function AdminContestsPage() {
     if (!confirm("Delete this contest entry?")) return;
     try {
       const res = await fetch(`/api/admin/contests/${id}`, { method: "DELETE" });
-      if (res.ok) fetchContests();
+      const result = await res.json();
+      if (!res.ok || !result.success) throw new Error(result.error || "Unable to delete contest.");
+      fetchContests();
     } catch (err) {
       console.error(err);
+      setError(err.message || "Unable to delete contest.");
     }
   };
 
@@ -206,6 +261,8 @@ export default function AdminContestsPage() {
             </button>
           </div>
 
+          {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</p>}
+
           {/* Contests Grid */}
           <div className="grid md:grid-cols-2 gap-6">
             {loading ? (
@@ -236,6 +293,10 @@ export default function AdminContestsPage() {
                       >
                         {c.status}
                       </span>
+                    </div>
+                    <div className="mb-2 flex flex-wrap gap-2 text-[11px] font-semibold">
+                      <span className={c.isPublished === false ? "text-slate-500" : "text-emerald-700"}>{c.isPublished === false ? "Hidden" : "Published"}</span>
+                      {c.isFeatured && <span className="text-amber-700">Featured</span>}
                     </div>
 
                     <h3 className="font-bold text-lg text-slate-900">{c.title}</h3>
@@ -306,6 +367,7 @@ export default function AdminContestsPage() {
             <h2 className="text-2xl font-bold text-slate-900 mb-6">
               {editingContest ? "Edit Contest" : "Create New Contest"}
             </h2>
+            {error && <p role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
 
             <form onSubmit={handleSubmitContest} className="space-y-4">
               <div>
@@ -341,7 +403,7 @@ export default function AdminContestsPage() {
                   >
                     <option value="UPCOMING">UPCOMING</option>
                     <option value="RUNNING">RUNNING</option>
-                    <option value="ENDED">ENDED</option>
+                    <option value="COMPLETED">COMPLETED</option>
                   </select>
                 </div>
               </div>
@@ -361,7 +423,7 @@ export default function AdminContestsPage() {
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Contest Date</label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     required
                     value={formData.contestDate}
                     onChange={(e) => setFormData({ ...formData, contestDate: e.target.value })}
@@ -372,7 +434,7 @@ export default function AdminContestsPage() {
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Registration Deadline</label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     value={formData.registrationDeadline}
                     onChange={(e) => setFormData({ ...formData, registrationDeadline: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 outline-none focus:border-indigo-600 focus:bg-white"
@@ -388,6 +450,26 @@ export default function AdminContestsPage() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 outline-none focus:border-indigo-600 focus:bg-white"
                 ></textarea>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Registration link
+                  <input type="url" value={formData.registrationLink} onChange={(e) => setFormData({ ...formData, registrationLink: e.target.value })} placeholder="https://..." className="mt-1 w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900" />
+                </label>
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Results link
+                  <input type="url" value={formData.resultLink} onChange={(e) => setFormData({ ...formData, resultLink: e.target.value })} placeholder="https://..." className="mt-1 w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900" />
+                </label>
+              </div>
+
+              <div className="flex flex-wrap gap-5">
+                <label className="flex items-center gap-2 text-xs font-medium text-slate-700">
+                  <input type="checkbox" checked={formData.isPublished} onChange={(e) => setFormData({ ...formData, isPublished: e.target.checked })} className="h-4 w-4 rounded text-indigo-600" />
+                  Publish contest
+                </label>
+                <label className="flex items-center gap-2 text-xs font-medium text-slate-700">
+                  <input type="checkbox" checked={formData.isFeatured} onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })} className="h-4 w-4 rounded text-indigo-600" />
+                  Feature contest
+                </label>
               </div>
 
               <button
@@ -438,7 +520,7 @@ export default function AdminContestsPage() {
                       </div>
                       <p className="text-xs text-slate-500">{app.user?.email} • {app.user?.studentId || "No ID"}</p>
                       {app.teamName && <p className="text-xs text-indigo-600 font-semibold mt-1">Team: {app.teamName}</p>}
-                      {app.remarks && <p className="text-xs text-slate-500 italic mt-0.5">Remarks: "{app.remarks}"</p>}
+                      {app.remarks && <p className="text-xs text-slate-500 italic mt-0.5">Remarks: &quot;{app.remarks}&quot;</p>}
                     </div>
 
                     <div className="flex items-center gap-2 self-end sm:self-center">

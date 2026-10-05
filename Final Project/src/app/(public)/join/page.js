@@ -396,12 +396,6 @@ export default function JoinPage() {
         </div>
       </main>
 
-      <footer className="py-8 border-t border-slate-200 text-center text-xs text-slate-500 bg-white">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© 2026 CSTU Computer & Programming Club | All Rights Reserved</p>
-          <p className="text-slate-600 font-medium">Chandpur Science and Technology University</p>
-        </div>
-      </footer>
     </>
   );
 }

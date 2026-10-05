@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Navbar from "@/components/Navbar";
 import {
   Users,
   FileSpreadsheet,
@@ -15,21 +14,53 @@ import {
   IdCard,
   Code2,
 } from "lucide-react";
+import { isExecutiveDesignation } from "@/lib/memberClasses";
 
 export default function MembersPage() {
   const [members, setMembers] = useState([]);
+  const [advisors, setAdvisors] = useState([]);
+  const [constitutionUrl, setConstitutionUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("executive");
   const [selectedMember, setSelectedMember] = useState(null);
+  const [selectedAdvisor, setSelectedAdvisor] = useState(null);
 
   useEffect(() => {
     const handleEscape = (event) => {
       if (event.key === "Escape") setSelectedMember(null);
+      if (event.key === "Escape") setSelectedAdvisor(null);
     };
 
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
+  }, []);
+
+  useEffect(() => {
+    async function loadProfileContent() {
+      try {
+        const [advisorResponse, settingsResponse] = await Promise.all([
+          fetch("/api/public/advisors", { cache: "no-store" }),
+          fetch("/api/public/settings", { cache: "no-store" }),
+        ]);
+        const [advisorResult, settingsResult] = await Promise.all([
+          advisorResponse.json(),
+          settingsResponse.json(),
+        ]);
+        if (!advisorResponse.ok || !advisorResult.success) {
+          throw new Error(advisorResult.error || "Unable to load advisors.");
+        }
+        setAdvisors(advisorResult.data || []);
+        if (settingsResponse.ok && settingsResult.success) {
+          setConstitutionUrl(settingsResult.data.constitutionUrl);
+        }
+      } catch (loadError) {
+        console.error("Profile content load failed:", loadError);
+      }
+    }
+
+    loadProfileContent();
   }, []);
 
   useEffect(() => {
@@ -55,7 +86,7 @@ export default function MembersPage() {
     fetchMembers();
   }, []);
 
-  const filteredMembers = members.filter((m) => {
+  const matchesMemberSearch = (m) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return (
@@ -66,6 +97,32 @@ export default function MembersPage() {
       m.codeforcesHandle?.toLowerCase().includes(q) ||
       m.vjudgeHandle?.toLowerCase().includes(q)
     );
+  };
+  const executiveMembers = members.filter(
+    (member) =>
+      member.memberClass === "EXECUTIVE_MEMBER" ||
+      isExecutiveDesignation(member.designation)
+  );
+  const leadershipMembers = executiveMembers
+    .slice(0, 2)
+    .filter(matchesMemberSearch);
+  const otherExecutiveMembers = executiveMembers
+    .slice(2)
+    .filter(matchesMemberSearch);
+  const visibleExecutiveMembers = [
+    ...leadershipMembers,
+    ...otherExecutiveMembers,
+  ];
+  const filteredAdvisors = advisors.filter((advisor) => {
+    if (!search.trim()) return true;
+    const query = search.toLowerCase();
+    return [
+      advisor.name,
+      advisor.title,
+      advisor.designation,
+      advisor.department,
+      advisor.institution,
+    ].some((value) => value?.toLowerCase().includes(query));
   });
 
   return (
@@ -79,9 +136,9 @@ export default function MembersPage() {
               <Users className="w-3.5 h-3.5" />
               Member Directory
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900">CSTU CPC Members</h1>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900">CSTU CPC Executive Committee</h1>
             <p className="text-slate-600 mt-1 text-sm sm:text-base">
-              Official list of registered club members ordered by designation priority.
+              Meet the student leaders serving the CSTU Computer & Programming Club.
             </p>
           </div>
 
@@ -97,17 +154,45 @@ export default function MembersPage() {
               <ExternalLink className="w-3.5 h-3.5 opacity-80" />
             </a>
 
-            <a
-              href="https://drive.google.com/file/d/1BQzvrV79zSwGQtjq3doPpi5-jXqdmh4m"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 text-xs font-bold shadow-xs flex items-center gap-2 transition-colors"
-            >
-              <FileText className="w-4 h-4 text-indigo-600" />
-              <span>Club Constitution</span>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-            </a>
+            {constitutionUrl && (
+              <a
+                href={constitutionUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 text-xs font-bold shadow-xs flex items-center gap-2 transition-colors"
+              >
+                <FileText className="w-4 h-4 text-indigo-600" />
+                <span>Club Constitution</span>
+                <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+              </a>
+            )}
           </div>
+        </div>
+
+        <div
+          className="mb-6 flex flex-wrap gap-2"
+          role="tablist"
+          aria-label="CSTU CPC profiles"
+        >
+          {[
+            { id: "executive", label: "Executive Members" },
+            { id: "advisors", label: "Advisors" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                activeTab === tab.id
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {/* Search bar */}
@@ -117,68 +202,202 @@ export default function MembersPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, designation, department, handle..."
+            placeholder="Search by name, designation, or department..."
             className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-600 shadow-xs"
           />
         </div>
 
-        {/* Member Cards Grid / Loading / Error */}
-        {loading ? (
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={i}
-                className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col items-center animate-pulse shadow-sm"
-              >
-                <div className="w-24 h-24 rounded-2xl bg-slate-200 mb-4" />
-                <div className="h-4 bg-slate-200 rounded w-3/4 mb-2" />
-                <div className="h-3 bg-slate-200 rounded w-1/2 mb-2" />
-                <div className="h-3 bg-slate-200 rounded w-2/3" />
-              </div>
-            ))}
+        {activeTab === "advisors" ? (
+          filteredAdvisors.length === 0 ? (
+            <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500 shadow-sm">
+              No advisors match your search.
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredAdvisors.map((advisor) => (
+                <article
+                  key={advisor._id}
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5"
+                >
+                  <div className="aspect-[4/5] overflow-hidden rounded-xl border border-slate-200 bg-slate-100 p-1">
+                    {advisor.avatarUrl ? (
+                      <img
+                        src={advisor.avatarUrl}
+                        alt={advisor.name}
+                        className="h-full w-full rounded-lg object-cover object-[center_25%]"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center rounded-lg bg-slate-100 text-4xl font-semibold text-indigo-700">
+                        {advisor.name
+                          .split(/\s+/)
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .map((part) => part[0])
+                          .join("")
+                          .toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="px-1 pt-4 text-center">
+                    <h2 className="text-base font-bold text-slate-900">{advisor.name}</h2>
+                    <p className="mt-1 text-sm font-medium text-indigo-700">
+                      {advisor.designation || advisor.title}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedAdvisor(advisor)}
+                      className="mt-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-slate-800 transition-colors hover:border-indigo-600 hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    >
+                      View Profile
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )
+        ) : loading ? (
+          <div className="space-y-10 animate-pulse">
+            <div className="grid gap-6 md:grid-cols-2">
+              {[...Array(2)].map((_, i) => (
+                <div
+                  key={i}
+                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                >
+                  <div className="aspect-[4/5] rounded-xl bg-slate-200" />
+                  <div className="mx-auto mt-5 h-5 w-2/3 rounded bg-slate-200" />
+                  <div className="mx-auto mt-2 h-4 w-1/2 rounded bg-slate-200" />
+                  <div className="mt-5 h-10 rounded-lg bg-slate-200" />
+                </div>
+              ))}
+            </div>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                >
+                  <div className="aspect-[4/5] rounded-xl bg-slate-200" />
+                  <div className="mx-auto mt-4 h-4 w-2/3 rounded bg-slate-200" />
+                  <div className="mx-auto mt-2 h-3 w-1/2 rounded bg-slate-200" />
+                  <div className="mt-4 h-9 rounded-lg bg-slate-200" />
+                </div>
+              ))}
+            </div>
           </div>
         ) : error ? (
           <div className="bg-rose-50 border border-rose-200 rounded-2xl p-8 text-center text-rose-700 shadow-sm">
             <p className="font-semibold">{error}</p>
           </div>
-        ) : filteredMembers.length === 0 ? (
+        ) : visibleExecutiveMembers.length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500 shadow-sm">
-            No active members found.
+            No executive members found.
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredMembers.map((m) => (
-              <div
-                key={m._id}
-                className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col items-center text-center hover:border-indigo-300 hover:shadow-md transition-all shadow-sm group"
-              >
-                <div className="relative w-24 h-24 rounded-2xl bg-slate-100 overflow-hidden mb-4 border border-slate-200">
-                  {m.avatarUrl ? (
-                    <img src={m.avatarUrl} alt={m.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-indigo-600 to-blue-600 font-extrabold text-2xl text-white">
-                      {m.name ? m.name[0].toUpperCase() : "M"}
-                    </div>
-                  )}
+          <div className="space-y-12">
+            {leadershipMembers.length > 0 && (
+              <section aria-labelledby="leadership-heading">
+                <div className="mb-5 border-b border-slate-200 pb-3">
+                  <h2
+                    id="leadership-heading"
+                    className="text-xl font-bold tracking-tight text-slate-900"
+                  >
+                    Club Leadership
+                  </h2>
                 </div>
-
-                <div className="w-full space-y-1.5">
-                  <h3 className="font-bold text-base text-slate-900 line-clamp-1">{m.name}</h3>
-                  <p className="text-xs font-semibold text-indigo-600 line-clamp-1">
-                    {m.designation || "Member"}
-                  </p>
-                  <p className="text-xs text-slate-500">Session: {m.session || "2022-23"}</p>
+                <div className="grid gap-6 md:grid-cols-2">
+                  {leadershipMembers.map((member) => (
+                    <article
+                      key={member._id}
+                      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
+                    >
+                      <div className="aspect-[4/5] overflow-hidden rounded-xl border border-slate-200 bg-slate-100 p-1">
+                        {member.avatarUrl ? (
+                          <img
+                            src={member.avatarUrl}
+                            alt={member.name}
+                            className="h-full w-full rounded-lg object-cover object-[center_25%]"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center rounded-lg bg-slate-100 text-5xl font-semibold text-indigo-700">
+                            {member.name ? member.name[0].toUpperCase() : "M"}
+                          </div>
+                        )}
+                      </div>
+                      <div className="px-2 pt-5 text-center">
+                        <h3 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                          {member.name}
+                        </h3>
+                        {member.designation && (
+                          <p className="mt-1 text-sm font-semibold text-indigo-700">
+                            {member.designation}
+                          </p>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMember(member)}
+                          className="mt-5 w-full rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                        >
+                          View Profile
+                        </button>
+                      </div>
+                    </article>
+                  ))}
                 </div>
+              </section>
+            )}
 
-                <button
-                  type="button"
-                  onClick={() => setSelectedMember(m)}
-                  className="mt-4 w-full px-3 py-2 rounded-lg bg-slate-900 hover:bg-indigo-600 text-white text-xs font-semibold transition-colors"
-                >
-                  View Profile
-                </button>
-              </div>
-            ))}
+            {otherExecutiveMembers.length > 0 && (
+              <section aria-labelledby="executive-committee-heading">
+                <div className="mb-5 border-b border-slate-200 pb-3">
+                  <h2
+                    id="executive-committee-heading"
+                    className="text-xl font-bold tracking-tight text-slate-900"
+                  >
+                    Executive Committee
+                  </h2>
+                </div>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {otherExecutiveMembers.map((member) => (
+                    <article
+                      key={member._id}
+                      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                    >
+                      <div className="aspect-[4/5] overflow-hidden rounded-xl border border-slate-200 bg-slate-100 p-1">
+                        {member.avatarUrl ? (
+                          <img
+                            src={member.avatarUrl}
+                            alt={member.name}
+                            className="h-full w-full rounded-lg object-cover object-[center_25%]"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center rounded-lg bg-slate-100 text-4xl font-semibold text-indigo-700">
+                            {member.name ? member.name[0].toUpperCase() : "M"}
+                          </div>
+                        )}
+                      </div>
+                      <div className="px-1 pt-4 text-center">
+                        <h3 className="text-base font-bold text-slate-900">
+                          {member.name}
+                        </h3>
+                        {member.designation && (
+                          <p className="mt-1 text-sm font-medium text-indigo-700">
+                            {member.designation}
+                          </p>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMember(member)}
+                          className="mt-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-slate-800 transition-colors hover:border-indigo-600 hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                        >
+                          View Profile
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
         )}
       </main>
@@ -216,9 +435,12 @@ export default function MembersPage() {
                   <h2 id="member-profile-title" className="text-xl font-bold text-slate-900 truncate">
                     {selectedMember.name}
                   </h2>
-                  <p className="text-sm font-semibold text-indigo-600 mt-1">
-                    {selectedMember.designation || "Member"}
-                  </p>
+                  {selectedMember.designation &&
+                    selectedMember.designation.toLowerCase() !== "member" && (
+                      <p className="text-sm font-semibold text-indigo-600 mt-1">
+                        {selectedMember.designation}
+                      </p>
+                    )}
                 </div>
               </div>
               <button
@@ -232,6 +454,11 @@ export default function MembersPage() {
             </div>
 
             <div className="p-6 space-y-5">
+              {selectedMember.bio && (
+                <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">
+                  {selectedMember.bio}
+                </p>
+              )}
               <div className="grid sm:grid-cols-2 gap-3">
                 <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
                   <p className="text-[11px] font-semibold text-slate-500 uppercase">Session</p>
@@ -319,7 +546,100 @@ export default function MembersPage() {
           </section>
         </div>
       )}
+      {selectedAdvisor && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setSelectedAdvisor(null);
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="advisor-profile-title"
+            className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-6">
+              <div className="flex min-w-0 items-center gap-4">
+                <div className="h-20 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                  {selectedAdvisor.avatarUrl ? (
+                    <img
+                      src={selectedAdvisor.avatarUrl}
+                      alt={selectedAdvisor.name}
+                      className="h-full w-full object-cover object-[center_25%]"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-indigo-700">
+                      {selectedAdvisor.name
+                        .split(/\s+/)
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((part) => part[0])
+                        .join("")
+                        .toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <h2 id="advisor-profile-title" className="truncate text-xl font-bold text-slate-900">
+                    {selectedAdvisor.name}
+                  </h2>
+                  <p className="mt-1 text-sm font-semibold text-indigo-700">
+                    {selectedAdvisor.designation || selectedAdvisor.title}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedAdvisor(null)}
+                className="shrink-0 rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900"
+                aria-label="Close advisor profile"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-5 p-6">
+              <div className="space-y-1 text-sm">
+                <p className="font-semibold text-slate-800">{selectedAdvisor.title}</p>
+                {selectedAdvisor.department && (
+                  <p className="text-slate-600">{selectedAdvisor.department}</p>
+                )}
+                {selectedAdvisor.institution && (
+                  <p className="text-slate-600">{selectedAdvisor.institution}</p>
+                )}
+              </div>
+              {selectedAdvisor.bio && (
+                <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">
+                  {selectedAdvisor.bio}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-3 text-sm">
+                {selectedAdvisor.email && (
+                  <a href={`mailto:${selectedAdvisor.email}`} className="font-medium text-indigo-700 hover:underline">
+                    Email
+                  </a>
+                )}
+                {selectedAdvisor.websiteUrl && (
+                  <a href={selectedAdvisor.websiteUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-700 hover:underline">
+                    Website
+                  </a>
+                )}
+                {selectedAdvisor.linkedinUrl && (
+                  <a href={selectedAdvisor.linkedinUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-700 hover:underline">
+                    LinkedIn
+                  </a>
+                )}
+                {selectedAdvisor.facebookUrl && (
+                  <a href={selectedAdvisor.facebookUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-700 hover:underline">
+                    Facebook
+                  </a>
+                )}
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
     </>
   );
 }
-
